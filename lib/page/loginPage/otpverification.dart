@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:plant_aplication/constant/colorConst.dart';
 import 'package:flutter_otp_text_field/flutter_otp_text_field.dart';
+import 'package:plant_aplication/controller/languageController.dart';
 import 'package:plant_aplication/controller/themeProvider.dart';
 import 'package:plant_aplication/controller/user/userController.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 
 class OtpVerificationPage extends ConsumerStatefulWidget {
   const OtpVerificationPage({Key? key}) : super(key: key);
@@ -53,37 +55,36 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
   void _handleRequiredOtp(BuildContext context, WidgetRef ref) async {
     final input = ref.read(inputProvider).trim();
     final isValid = ref.read(isValidInputProvider);
+    final language = ref.read(languageProvider);
 
     ref.read(errorMessageProvider.notifier).state = null;
-    ref.read(isLoadingProvider.notifier).state = true;
 
     if (input.isEmpty) {
-      ref.read(errorMessageProvider.notifier).state = 'This field is required';
-      ref.read(isLoadingProvider.notifier).state = false;
+      ref.read(errorMessageProvider.notifier).state = 'this_field_is_required'
+          .tr(language);
       return;
     }
     if (!isValid) {
       ref.read(errorMessageProvider.notifier).state =
-          'Please enter a valid email or phone number';
-      ref.read(isLoadingProvider.notifier).state = false;
+          'enter_valid_email_or_phone'.tr(language);
       return;
     }
+
+    ref.read(isLoadingProvider.notifier).state = true;
     try {
-      ref.read(isLoadingProvider.notifier).state = true;
       final response = await UserController.requiresOtp(
         email: input,
         context: context,
       );
-      print('response $response');
       if (response['status'] == true) {
         ref.read(showOtpFieldProvider.notifier).state = true;
-        ref.read(isLoadingProvider.notifier).state = false;
         _startCountdown(ref);
       }
     } catch (e) {
       if (context.mounted) {
         ref.read(errorMessageProvider.notifier).state = e.toString();
       }
+    } finally {
       ref.read(isLoadingProvider.notifier).state = false;
     }
   }
@@ -128,10 +129,10 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
         ref.read(confirmPasswordProvider.notifier).state = '';
         ref.read(isOtpVerifiedProvider.notifier).state = true;
       }
-    } catch (e) {
-      if (context.mounted) {
-        ref.read(isLoadingProvider.notifier).state = false;
-      }
+    } catch (_) {
+      // Error is surfaced by the controller's toast; just release loading.
+    } finally {
+      ref.read(isLoadingProvider.notifier).state = false;
     }
   }
 
@@ -139,18 +140,20 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
     final password = ref.read(passwordProvider);
     final confirmPassword = ref.read(confirmPasswordProvider);
     final input = ref.read(inputProvider).trim();
+    final language = ref.read(languageProvider);
     if (password.isEmpty || confirmPassword.isEmpty) {
-      ref.read(passwordErrorProvider.notifier).state =
-          'Please fill in all fields';
+      ref.read(passwordErrorProvider.notifier).state = 'please_fill_all_fields'
+          .tr(language);
       return;
     }
     if (password != confirmPassword) {
-      ref.read(passwordErrorProvider.notifier).state = 'Passwords do not match';
+      ref.read(passwordErrorProvider.notifier).state = 'passwords_do_not_match'
+          .tr(language);
       return;
     }
     if (password.length < 6 || confirmPassword.length < 6) {
-      ref.read(passwordErrorProvider.notifier).state =
-          'Password must be at least 6 characters';
+      ref.read(passwordErrorProvider.notifier).state = 'password_min_6_chars'
+          .tr(language);
       return;
     }
     ref.read(isLoadingProvider.notifier).state = true;
@@ -173,10 +176,10 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
           Navigator.of(context).pushReplacementNamed('/login');
         }
       }
-    } catch (e) {
-      if (context.mounted) {
-        ref.read(isLoadingProvider.notifier).state = false;
-      }
+    } catch (_) {
+      // Error surfaced by controller; release loading in finally.
+    } finally {
+      ref.read(isLoadingProvider.notifier).state = false;
     }
   }
 
@@ -187,6 +190,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
     final countdown = ref.watch(countdownProvider);
     final isOtpExpired = showOtpField && countdown == 0;
     final isDark = ref.watch(themeProvider);
+    final language = ref.watch(languageProvider);
 
     Color buttonColor;
     if (showOtpField) {
@@ -240,7 +244,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'Enter your email or phone number to receive an OTP',
+                        'enter_email_or_phone_for_otp'.tr(language),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
@@ -264,7 +268,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                               },
                               keyboardType: TextInputType.emailAddress,
                               decoration: InputDecoration(
-                                hintText: 'Email or phone number',
+                                hintText: 'email_or_phone'.tr(language),
                                 hintStyle: TextStyle(
                                   color: isDark
                                       ? Colors.grey[300]
@@ -317,7 +321,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                                   ref.read(passwordProvider.notifier).state =
                                       value,
                               decoration: InputDecoration(
-                                hintText: 'New Password',
+                                hintText: 'new_password'.tr(language),
                                 prefixIcon: Icon(
                                   Icons.lock_outline,
                                   color: isDark
@@ -385,7 +389,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                                           .state =
                                       value,
                               decoration: InputDecoration(
-                                hintText: 'Confirm Password',
+                                hintText: 'confirm_password'.tr(language),
                                 prefixIcon: Icon(
                                   Icons.lock_outline,
                                   color: isDark
@@ -522,7 +526,12 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                                     );
                                     return countdown > 0
                                         ? Text(
-                                            'Resend code in $countdown seconds',
+                                            'resend_code_in_seconds'
+                                                .tr(language)
+                                                .replaceFirst(
+                                                  '{seconds}',
+                                                  '$countdown',
+                                                ),
                                             style: const TextStyle(
                                               color:
                                                   ColorConstants.primaryColor,
@@ -532,9 +541,11 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                                             onPressed: () {
                                               _handleRequiredOtp(context, ref);
                                             },
-                                            child: const Text(
-                                              "Didn't receive code? Resend",
-                                              style: TextStyle(
+                                            child: Text(
+                                              'didnt_receive_code_resend'.tr(
+                                                language,
+                                              ),
+                                              style: const TextStyle(
                                                 color:
                                                     ColorConstants.primaryColor,
                                               ),
@@ -593,12 +604,12 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                                 )
                               : Text(
                                   isOtpExpired
-                                      ? 'OTP Expired'
+                                      ? 'otp_expired'.tr(language)
                                       : ref.watch(isOtpVerifiedProvider)
-                                      ? 'Reset Password'
+                                      ? 'reset_password'.tr(language)
                                       : ref.watch(showOtpFieldProvider)
-                                      ? 'Verify OTP'
-                                      : 'Get OTP',
+                                      ? 'verify_otp'.tr(language)
+                                      : 'get_otp'.tr(language),
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,

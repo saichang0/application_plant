@@ -10,6 +10,8 @@ import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:plant_aplication/page/widget/plantSearch.dart';
 import 'package:plant_aplication/page/plantPage/widget/plantcardWidget.dart';
 import 'package:plant_aplication/controller/product/productcontroller.dart';
+import 'package:plant_aplication/controller/languageController.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 
 final PopularCategoryProvider = StateProvider<String>((ref) => 'All');
 final PopularProductsProvider =
@@ -26,7 +28,11 @@ class PopularNotifier extends StateNotifier<AsyncValue<List<Plant>>> {
     try {
       state = const AsyncLoading();
 
-      final data = await ProductController.queryProducts(isPopular: true);
+      final data = await ProductController.queryProducts(
+        page: 1,
+        limit: 100,
+        isPopular: true,
+      );
       print('🔥 Popular Offers Raw Data: $data');
       final plants = data.map((productMap) {
         return Plant.fromGraphQL(productMap);
@@ -68,14 +74,6 @@ class _PopularPageState extends ConsumerState<PopularPage>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      ref.read(PopularProductsProvider.notifier).loadPopular();
-    });
-  }
 
   Future<void> _handleFavoriteToggle(
     String productId,
@@ -127,6 +125,7 @@ class _PopularPageState extends ConsumerState<PopularPage>
     super.build(context);
     final PopularAsync = ref.watch(PopularProductsProvider);
     final isDark = ref.watch(themeProvider);
+    final language = ref.watch(languageProvider);
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.grey[50],
@@ -179,13 +178,52 @@ class _PopularPageState extends ConsumerState<PopularPage>
         },
         child: CustomScrollView(
           slivers: [
-            _buildSliverAppBar(isDark),
+            _buildSliverAppBar(isDark, language),
             PopularAsync.when(
               loading: () => const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (e, _) => SliverFillRemaining(
-                child: Center(child: Text('Error loading Popular')),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 56,
+                          color: isDark ? Colors.white70 : Colors.grey[600],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'error_loading_popular'.tr(language),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          e.toString(),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => ref
+                              .read(PopularProductsProvider.notifier)
+                              .loadPopular(),
+                          child: Text('retry'.tr(language)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
               data: (_) => const SliverToBoxAdapter(child: SizedBox.shrink()),
             ),
@@ -194,19 +232,19 @@ class _PopularPageState extends ConsumerState<PopularPage>
                 pinned: true,
                 delegate: _StickyHeaderDelegate(
                   height: 56,
-                  child: _buildStickyCategoryChips(isDark),
+                  child: _buildStickyCategoryChips(isDark, language),
                 ),
               ),
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
             if (PopularAsync is AsyncData)
-              _buildPopularGrid(PopularAsync, isDark),
+              _buildPopularGrid(PopularAsync, isDark, language),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSliverAppBar(bool isDark) {
+  Widget _buildSliverAppBar(bool isDark, String language) {
     return SliverAppBar(
       expandedHeight: 80.0,
       floating: false,
@@ -222,7 +260,7 @@ class _PopularPageState extends ConsumerState<PopularPage>
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
-        'My Popular',
+        'my_popular'.tr(language),
         style: TextStyle(
           color: isDark ? Colors.white : Colors.black,
           fontSize: 20,
@@ -243,9 +281,16 @@ class _PopularPageState extends ConsumerState<PopularPage>
     );
   }
 
-  Widget _buildStickyCategoryChips(bool isDark) {
+  Widget _buildStickyCategoryChips(bool isDark, String language) {
     final selectedCategory = ref.watch(PopularCategoryProvider);
-    final categories = ['All', 'Monstera', 'Aloe', 'Palm', 'Jade'];
+    final popularAsync = ref.watch(PopularProductsProvider);
+    final plants = popularAsync.asData?.value ?? const <Plant>[];
+    final unique = <String>{};
+    for (final p in plants) {
+      final name = p.categoryName;
+      if (name != null && name.trim().isNotEmpty) unique.add(name);
+    }
+    final categories = ['All', ...unique];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       color: isDark ? Colors.black : Colors.white,
@@ -262,7 +307,7 @@ class _PopularPageState extends ConsumerState<PopularPage>
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: FilterChip(
-                label: Text(category),
+                label: Text(category == 'All' ? 'all'.tr(language) : category),
                 selected: isSelected,
                 onSelected: (selected) {
                   ref.read(PopularCategoryProvider.notifier).state = category;
@@ -286,21 +331,24 @@ class _PopularPageState extends ConsumerState<PopularPage>
     );
   }
 
-  Widget _buildPopularGrid(AsyncValue<List<Plant>> PopularAsync, bool isDark) {
+  Widget _buildPopularGrid(
+    AsyncValue<List<Plant>> PopularAsync,
+    bool isDark,
+    String language,
+  ) {
     final selectedCategory = ref.watch(PopularCategoryProvider);
 
     return PopularAsync.when(
       loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
       error: (e, _) => SliverToBoxAdapter(
-        child: Center(child: Text('Error loading Popular')),
+        child: Center(child: Text('error_loading_popular'.tr(language))),
       ),
       data: (plants) {
         final filteredPlants = selectedCategory == 'All'
             ? plants
-            : plants.where((plant) {
-                // add category logic later
-                return true;
-              }).toList();
+            : plants
+                  .where((plant) => plant.categoryName == selectedCategory)
+                  .toList();
 
         if (filteredPlants.isEmpty) {
           return SliverToBoxAdapter(
@@ -318,7 +366,7 @@ class _PopularPageState extends ConsumerState<PopularPage>
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Your Popular is empty',
+                      'popular_empty'.tr(language),
                       style: TextStyle(
                         color: isDark ? Colors.white : Colors.grey[600],
                         fontSize: 18,
@@ -385,6 +433,6 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_StickyHeaderDelegate oldDelegate) {
-    return oldDelegate.height != height;
+    return oldDelegate.height != height || oldDelegate.child != child;
   }
 }

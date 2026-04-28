@@ -1,100 +1,132 @@
 const QueryOrder = r'''
-query Orders {
-  orders {
+query MyOrders($status: String, $limit: Int, $offset: Int) {
+  myOrders(status: $status, limit: $limit, offset: $offset) {
     status
     message
-    tag
-    data {
-      _id
+    tap
+    total
+    sales {
+      id
+      customerId
       userId
-      orderNumber
+      saleDate
       totalAmount
-      status
-      shippingAddress {
-        _id
-        village
-        district
-        province
-        country
-        createdAt
-        updatedAt
-      }
-      shippingMethod
-      shippingCost
-      estimatedDelivery
-      paymentMethod
-      paymentStatus
-      promoCodeId
+      taxAmount
       discountAmount
-      orderItems {
-        _id
-        orderId
+      status
+      customerName
+      note
+      customerAddressId
+      updatedAt
+      user {
+        id
+        firstName
+        lastName
+        shopName
+        phoneNumber
+      }
+      customerAddress {
+        id
+        province
+        district
+        village
+        country
+      }
+      saleDetails {
+        id
         quantity
+        unitId
+        weightGrams
         unitPrice
         totalPrice
-        createAt
-        updateAt
+        note
         product {
-          _id
+          id
           name
-          description
-          price
-          originalPrice
-          categoryId
-          images
-          rating
-          reviewCount
-          stockQuantity
-          isPopular
-          isSpecialOffer
-          discountPercentage
-          isActive
-          createdAt
-          updatedAt
-          deletedAt
-          isFavorite
+          imageUrl
+        }
+        unit {
+          id
+          name
         }
       }
-      createdAt
-      updatedAt
+      payments {
+        id
+        paymentMethod
+        currency
+        amount
+        paidAt
+      }
+      deliveries {
+        id
+        deliveryService
+        branch
+        trackingNumber
+        status
+        shippedAt
+      }
     }
   }
 }
 ''';
 
-const QuerorderItems = r'''
-query OrderItems {
-  orderItems {
+const QueryOrderById = r'''
+query MyOrder($id: ID!) {
+  myOrder(id: $id) {
     status
     message
-    tag
-    data {
-      _id
-      orderId
-      quantity
-      unitPrice
-      totalPrice
-      createAt
-      updateAt
-      productId {
-        _id
-        name
-        description
-        price
-        originalPrice
-        categoryId
-        images
-        rating
-        reviewCount
-        stockQuantity
-        isPopular
-        isSpecialOffer
-        discountPercentage
-        isActive
-        createdAt
-        updatedAt
-        deletedAt
-        isFavorite
+    tap
+    sale {
+      id
+      customerId
+      userId
+      saleDate
+      totalAmount
+      taxAmount
+      discountAmount
+      status
+      customerName
+      note
+      customerAddressId
+      updatedAt
+      user {
+        id
+        firstName
+        lastName
+        shopName
+        phoneNumber
+      }
+      customerAddress {
+        id
+        province
+        district
+        village
+        country
+      }
+      saleDetails {
+        id
+        quantity
+        unitId
+        weightGrams
+        unitPrice
+        totalPrice
+        note
+        product {
+          id
+          name
+          imageUrl
+        }
+        unit {
+          id
+          name
+        }
+      }
+      payments {
+        id
+        paymentMethod
+        currency
+        amount
+        paidAt
       }
     }
   }

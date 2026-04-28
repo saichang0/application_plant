@@ -1,22 +1,17 @@
 const String userRegisterMutation = r'''
-mutation CreateUser($data: CreateUserInput!) {
-  createUser(data: $data) {
+mutation CreateCustomer($data: createCustomerInput!) {
+  createCustomer(data: $data) {
     status
     message
-    tag
-    user {
-      _id
+    tap
+    customer {
+      id
       firstName
       lastName
       phoneNumber
-      password
       email
-      role
-      status
-      profileImage
-      pin
-      otp
-      otpExpiry
+      profileImageUrl
+      address
     }
     accessToken
     refreshToken
@@ -25,24 +20,19 @@ mutation CreateUser($data: CreateUserInput!) {
 ''';
 
 const String userLoginMutation = r'''
-mutation UserLogin($data: LoginInput!) {
-  userLogin(data: $data) {
+mutation LoginCustomer($data: CustomerLoginInput!) {
+  loginCustomer(data: $data) {
     status
     message
-    tag
-    user {
-      _id
+    tap
+    customer {
+      id
       firstName
       lastName
       phoneNumber
-      password
       email
-      role
-      status
-      profileImage
-      pin
-      otp
-      otpExpiry
+      profileImageUrl
+      address
     }
     accessToken
     refreshToken
@@ -55,7 +45,7 @@ mutation RequestOTP($data: RequestOTPInput!) {
   requestOTP(data: $data) {
     status
     message
-    tag
+    tap
   }
 }
 ''';
@@ -65,7 +55,7 @@ mutation VerifyOTP($data: VerifyOTPInput!) {
   verifyOTP(data: $data) {
     status
     message
-    tag
+    tap
   }
 }
 ''';
@@ -75,7 +65,18 @@ mutation ResetPassword($data: ResetPasswordInput!) {
   resetPassword(data: $data) {
     status
     message
-    tag
+    tap
+    customer {
+      id
+      firstName
+      lastName
+      phoneNumber
+      email
+      profileImageUrl
+      address
+    }
+    accessToken
+    refreshToken
   }
 }
 ''';

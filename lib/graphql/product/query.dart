@@ -1,59 +1,125 @@
 const String ProductsQuery = r'''
-query Products($paginate: PaginationInput, $keyword: String, $filter: FilterInputProduct) {
-  products(paginate: $paginate, keyword: $keyword, filter: $filter) {
+query PublicProducts(
+  $keyword: String
+  $paginate: PaginationInput
+  $filter: FilterInputProduct
+  $shopId: ID
+) {
+  publicProducts(
+    keyword: $keyword
+    paginate: $paginate
+    filter: $filter
+    shopId: $shopId
+  ) {
     status
     message
+    tap
+    total
     data {
-      _id
+      id
       name
       description
-      price
-      originalPrice
-      categoryId
-      images
-      rating
-      reviewCount
+      size
+      imageUrl
       stockQuantity
+      stockWeight
+      costPrice
+      salePrice
+      pricePerKg
+      pricePerHalfBag
+      pricePer12Kg
+      weightPerUnit
       isPopular
       isSpecialOffer
-      discountPercentage
+      discount
       isActive
       createdAt
-      updatedAt
-      deletedAt
+      viewsCount
       isFavorite
+      productViews {
+        id
+        source
+        createdAt
+      }
+      productReviews {
+        id
+        rating
+      }
+      category {
+        id
+        name
+      }
+      unit {
+        id
+        name
+        weightInGrams
+      }
+      owner {
+        id
+        firstName
+        lastName
+        shopName
+        profileImageUrl
+        bankAccountImageUrl
+      }
     }
-    total
-    tag
   }
 }
 ''';
 
 const String Product = r'''
-query Product($where: entityInput) {
-  product(where: $where) {
+query PublicProduct($id: ID!) {
+  publicProduct(id: $id) {
     status
     message
-    tag
+    tap
     data {
-      _id
+      id
       name
       description
-      price
-      originalPrice
-      categoryId
-      images
-      rating
-      reviewCount
+      size
+      imageUrl
       stockQuantity
+      stockWeight
+      costPrice
+      salePrice
+      pricePerKg
+      pricePerHalfBag
+      pricePer12Kg
+      weightPerUnit
       isPopular
       isSpecialOffer
-      discountPercentage
+      discount
       isActive
       createdAt
-      updatedAt
-      deletedAt
+      viewsCount
       isFavorite
+      productViews {
+        id
+        source
+        createdAt
+      }
+      productReviews {
+        id
+        rating
+      }
+      category {
+        id
+        name
+      }
+      unit {
+        id
+        name
+        weightInGrams
+      }
+      owner {
+        id
+        firstName
+        lastName
+        shopName
+        profileImageUrl
+        bankAccountImageUrl
+      }
     }
   }
 }
@@ -64,26 +130,59 @@ query Wishlists {
   wishlists {
     status
     message
-    tag
+    tap
     total
     data {
-      _id
-      userId
+      id
+      customerId
       productId
       product {
-        _id
+        id
         name
         description
-        price
-        originalPrice
-        categoryId
-        images
-        rating
-        reviewCount
+        size
+        imageUrl
         stockQuantity
+        stockWeight
+        costPrice
+        salePrice
+        pricePerKg
+        pricePerHalfBag
+        pricePer12Kg
+        weightPerUnit
         isPopular
         isSpecialOffer
-        discountPercentage
+        discount
+        isActive
+        createdAt
+        viewsCount
+        isFavorite
+        productViews {
+          id
+          source
+          createdAt
+        }
+        productReviews {
+          id
+          rating
+        }
+        category {
+          id
+          name
+        }
+        unit {
+          id
+          name
+          weightInGrams
+        }
+        owner {
+          id
+          firstName
+          lastName
+          shopName
+          profileImageUrl
+          bankAccountImageUrl
+        }
       }
     }
   }

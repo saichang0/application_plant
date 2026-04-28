@@ -26,6 +26,10 @@ class BottomNavNotifier extends StateNotifier<BottomNavState> {
   void setIndex(int index) {
     state = state.copyWith(currentIndex: index);
   }
+
+  void reset() {
+    state = BottomNavState(currentIndex: 0);
+  }
 }
 
 // Provider

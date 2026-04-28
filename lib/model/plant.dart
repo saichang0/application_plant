@@ -8,6 +8,10 @@ class Plant {
   final bool isFavorite;
   final String description;
   final String? reviewCount;
+  final String? shopName;
+  final String? categoryId;
+  final String? categoryName;
+  final int viewsCount;
 
   Plant({
     required this.id,
@@ -19,24 +23,75 @@ class Plant {
     required this.isFavorite,
     required this.description,
     this.reviewCount,
+    this.shopName,
+    this.categoryId,
+    this.categoryName,
+    this.viewsCount = 0,
   });
 
   factory Plant.fromGraphQL(Map<String, dynamic> json) {
-    String imageUrl = '';
-    if (json['images'] is List && (json['images'] as List).isNotEmpty) {
-      imageUrl = json['images'][0].toString();
+    final imageUrl = (json['imageUrl'] ?? '').toString();
+    final owner = json['owner'];
+    final shopName = owner is Map<String, dynamic>
+        ? owner['shopName']?.toString()
+        : null;
+    final category = json['category'];
+    final categoryId = category is Map<String, dynamic>
+        ? category['id']?.toString()
+        : null;
+    final categoryName = category is Map<String, dynamic>
+        ? category['name']?.toString()
+        : null;
+
+    // Average rating + review count come from productReviews.
+    double rating = 0;
+    int reviewCount = 0;
+    final reviews = json['productReviews'];
+    if (reviews is List && reviews.isNotEmpty) {
+      double total = 0;
+      int counted = 0;
+      for (final r in reviews) {
+        if (r is Map && r['rating'] != null) {
+          final v = double.tryParse(r['rating'].toString());
+          if (v != null) {
+            total += v;
+            counted += 1;
+          }
+        }
+      }
+      reviewCount = reviews.length;
+      if (counted > 0) rating = total / counted;
+    }
+    if (rating == 0 && json['rating'] != null) {
+      rating = double.tryParse(json['rating'].toString()) ?? 0;
+    }
+
+    // viewsCount: prefer server-provided counter; fall back to productViews length.
+    int viewsCount = 0;
+    if (json['viewsCount'] is num) {
+      viewsCount = (json['viewsCount'] as num).toInt();
+    } else if (json['viewsCount'] != null) {
+      viewsCount = int.tryParse(json['viewsCount'].toString()) ?? 0;
+    }
+    final views = json['productViews'];
+    if (viewsCount == 0 && views is List) {
+      viewsCount = views.length;
     }
 
     return Plant(
-      id: json['_id'] ?? '',
+      id: (json['id'] ?? '').toString(),
       name: json['name'] ?? '',
-      price: double.tryParse(json['price'].toString()) ?? 0,
-      rating: double.tryParse(json['rating'].toString()) ?? 0,
+      price: double.tryParse((json['salePrice'] ?? 0).toString()) ?? 0,
+      rating: rating,
       images: imageUrl,
-      discount: json['discountPercentage']?.toString(),
+      discount: json['discount']?.toString(),
       isFavorite: json['isFavorite'] ?? false,
       description: json['description'] ?? '',
-      reviewCount: json['reviewCount']?.toString(),
+      reviewCount: (json['reviewCount']?.toString()) ?? reviewCount.toString(),
+      shopName: shopName,
+      categoryId: categoryId,
+      categoryName: categoryName,
+      viewsCount: viewsCount,
     );
   }
 
@@ -51,6 +106,10 @@ class Plant {
       isFavorite: isFavorite ?? this.isFavorite,
       description: description,
       reviewCount: reviewCount,
+      shopName: shopName,
+      categoryId: categoryId,
+      categoryName: categoryName,
+      viewsCount: viewsCount,
     );
   }
 }

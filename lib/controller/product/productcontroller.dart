@@ -7,42 +7,70 @@ import 'package:plant_aplication/services/authHelper.dart';
 import 'package:plant_aplication/services/authStorage.dart';
 
 class ProductController {
-  // query product data
+  // Query product list from the public customer-facing resolver.
   static Future<List<Map<String, dynamic>>> queryProducts({
     String? keyword,
     int? page,
     int? limit,
     bool? isSpecialOffer,
     bool? isPopular,
+    String? shopId,
   }) async {
     await checkTokenAndLogout();
     final client = await _createClient();
-    Map<String, dynamic> variables = {};
+
+    final Map<String, dynamic> variables = {};
+
     if (keyword != null && keyword.trim().isNotEmpty) {
       variables['keyword'] = keyword;
     }
+
     if (page != null && limit != null) {
       variables['paginate'] = {'page': page, 'limit': limit};
     }
+
+    // ✅ FIX FILTER (no null values)
     if (isSpecialOffer != null || isPopular != null) {
-      variables['filter'] = {
-        'isSpecialOffer': isSpecialOffer,
-        'isPopular': isPopular,
-      };
+      final filter = <String, dynamic>{};
+
+      if (isSpecialOffer != null) {
+        filter['isSpecialOffer'] = isSpecialOffer;
+      }
+
+      if (isPopular != null) {
+        filter['isPopular'] = isPopular;
+      }
+
+      variables['filter'] = filter;
     }
+
+    if (shopId != null && shopId.trim().isNotEmpty) {
+      variables['shopId'] = shopId;
+    }
+
     final result = await client.query(
-      QueryOptions(document: gql(ProductsQuery), variables: variables),
+      QueryOptions(
+        document: gql(ProductsQuery),
+        variables: variables,
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
     );
+
     if (result.hasException) {
-      return [];
+      debugPrint('queryProducts exception: ${result.exception}');
+      throw Exception(result.exception.toString());
     }
-    final data = result.data?["products"]?["data"];
-    print('product data $data');
+
+    final data = result.data?['publicProducts']?['data'] as List?;
+    debugPrint(
+      'queryProducts (filter=${variables['filter']}) -> ${data?.length ?? 0} items',
+    );
     if (data == null) return [];
+
     return List<Map<String, dynamic>>.from(data);
   }
 
-  //query product by id, name, price
+  // Query a single product by id.
   static Future<Map<String, dynamic>> fetchProduct({
     String? id,
     required BuildContext context,
@@ -50,25 +78,23 @@ class ProductController {
     try {
       await checkTokenAndLogout();
       final client = await _createClient();
-      final Map<String, dynamic> where = {};
       final result = await client.query(
-        QueryOptions(
-          document: gql(Product),
-          variables: {
-            'where': {'_id': id},
-          },
-        ),
+        QueryOptions(document: gql(Product), variables: {'id': id}),
       );
       if (result.hasException) {
         return {'status': 'ERROR', 'message': result.exception.toString()};
       }
-      return Map<String, dynamic>.from(result.data?['product'] as Map);
+      final payload = result.data?['publicProduct'];
+      if (payload == null) {
+        return {'status': 'ERROR', 'message': 'Empty response from server'};
+      }
+      return Map<String, dynamic>.from(payload as Map);
     } catch (e) {
       return {'status': 'ERROR', 'message': e.toString()};
     }
   }
 
-  //create and delete wishlist
+  // Toggle wishlist for a product.
   static Future<Map<String, dynamic>> togglewishlist({
     required String productId,
     required BuildContext context,
@@ -95,16 +121,24 @@ class ProductController {
     }
   }
 
-  // query wishlist data
+  // Query wishlist for the current customer.
   static Future<List<Map<String, dynamic>>> wishlist() async {
+    await checkTokenAndLogout();
     final client = await _createClient();
-    final result = await client.query(QueryOptions(document: gql(Wishlist)));
+    final result = await client.query(
+      QueryOptions(
+        document: gql(Wishlist),
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
     if (result.hasException) {
-      return [];
+      debugPrint('wishlist exception: ${result.exception}');
+      throw Exception(result.exception.toString());
     }
-    final Data = result.data?["wishlists"]?["data"];
-    if (Data == null) return [];
-    return List<Map<String, dynamic>>.from(Data);
+    debugPrint('wishlist raw data: ${result.data}');
+    final data = result.data?['wishlists']?['data'];
+    if (data == null) return [];
+    return List<Map<String, dynamic>>.from(data);
   }
 
   static Future<GraphQLClient> _createClient() async {

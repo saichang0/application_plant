@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plant_aplication/model/plant.dart';
 import 'package:plant_aplication/page/plantPage/widget/plantcardWidget.dart';
 import 'package:plant_aplication/page/plantPage/plantDetail.dart';
+import 'package:plant_aplication/controller/languageController.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 
 class SearchResultsWidget extends ConsumerWidget {
   final List<Plant> plants;
@@ -36,20 +38,22 @@ class SearchResultsWidget extends ConsumerWidget {
       );
     }
 
+    final language = ref.watch(languageProvider);
+
     if (error != null) {
-      return _buildErrorWidget();
+      return _buildErrorWidget(language);
     }
 
     return Column(
       children: [
-        _buildSearchResultsHeader(context),
+        _buildSearchResultsHeader(context, language),
         const SizedBox(height: 16),
-        _buildSearchResultsGrid(context),
+        _buildSearchResultsGrid(context, language),
       ],
     );
   }
 
-  Widget _buildSearchResultsHeader(BuildContext context) {
+  Widget _buildSearchResultsHeader(BuildContext context, String language) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
@@ -59,13 +63,19 @@ class SearchResultsWidget extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Search Results',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                Text(
+                  'search_results'.tr(language),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Found ${plants.length} plants for "$searchKeyword"',
+                  'found_plants_for_keyword'
+                      .tr(language)
+                      .replaceAll('{count}', '${plants.length}')
+                      .replaceAll('{keyword}', searchKeyword),
                   style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
               ],
@@ -74,7 +84,7 @@ class SearchResultsWidget extends ConsumerWidget {
           TextButton.icon(
             onPressed: onClearSearch,
             icon: const Icon(Icons.close, size: 18),
-            label: const Text('Clear'),
+            label: Text('clear'.tr(language)),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
           ),
         ],
@@ -83,9 +93,9 @@ class SearchResultsWidget extends ConsumerWidget {
   }
 
   /// Grid displaying search results
-  Widget _buildSearchResultsGrid(BuildContext context) {
+  Widget _buildSearchResultsGrid(BuildContext context, String language) {
     if (plants.isEmpty) {
-      return _buildEmptyState();
+      return _buildEmptyState(language);
     }
 
     return Padding(
@@ -126,7 +136,7 @@ class SearchResultsWidget extends ConsumerWidget {
   }
 
   /// Empty state when no results found
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(String language) {
     return Container(
       height: 300,
       margin: const EdgeInsets.all(16),
@@ -137,7 +147,7 @@ class SearchResultsWidget extends ConsumerWidget {
             Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              'No plants found',
+              'no_plants_found'.tr(language),
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 18,
@@ -146,7 +156,7 @@ class SearchResultsWidget extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Try searching with different keywords',
+              'try_searching_with_different_keywords'.tr(language),
               style: TextStyle(color: Colors.grey[500], fontSize: 14),
             ),
           ],
@@ -156,7 +166,7 @@ class SearchResultsWidget extends ConsumerWidget {
   }
 
   /// Error state widget
-  Widget _buildErrorWidget() {
+  Widget _buildErrorWidget(String language) {
     return Container(
       height: 200,
       margin: const EdgeInsets.all(16),
@@ -172,7 +182,7 @@ class SearchResultsWidget extends ConsumerWidget {
             Icon(Icons.error_outline, color: Colors.red.shade700, size: 48),
             const SizedBox(height: 16),
             Text(
-              'Unable to load search results',
+              'unable_to_load_search_results'.tr(language),
               style: TextStyle(
                 color: Colors.red.shade700,
                 fontWeight: FontWeight.w600,
@@ -218,21 +228,23 @@ class SliverSearchResultsWidget extends ConsumerWidget {
       );
     }
 
+    final language = ref.watch(languageProvider);
+
     if (error != null) {
-      return SliverToBoxAdapter(child: _buildErrorWidget());
+      return SliverToBoxAdapter(child: _buildErrorWidget(language));
     }
 
     return SliverList(
       delegate: SliverChildListDelegate([
-        _buildSearchResultsHeader(context),
+        _buildSearchResultsHeader(context, language),
         const SizedBox(height: 16),
-        _buildSearchResultsGrid(context),
+        _buildSearchResultsGrid(context, language),
         const SizedBox(height: 20),
       ]),
     );
   }
 
-  Widget _buildSearchResultsHeader(BuildContext context) {
+  Widget _buildSearchResultsHeader(BuildContext context, String language) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
@@ -242,13 +254,19 @@ class SliverSearchResultsWidget extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Search Results',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                Text(
+                  'search_results'.tr(language),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Found ${plants.length} plants for "$searchKeyword"',
+                  'found_plants_for_keyword'
+                      .tr(language)
+                      .replaceAll('{count}', '${plants.length}')
+                      .replaceAll('{keyword}', searchKeyword),
                   style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
               ],
@@ -257,7 +275,7 @@ class SliverSearchResultsWidget extends ConsumerWidget {
           TextButton.icon(
             onPressed: onClearSearch,
             icon: const Icon(Icons.close, size: 18),
-            label: const Text('Clear'),
+            label: Text('clear'.tr(language)),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
           ),
         ],
@@ -265,9 +283,9 @@ class SliverSearchResultsWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildSearchResultsGrid(BuildContext context) {
+  Widget _buildSearchResultsGrid(BuildContext context, String language) {
     if (plants.isEmpty) {
-      return _buildEmptyState();
+      return _buildEmptyState(language);
     }
 
     return Padding(
@@ -307,7 +325,7 @@ class SliverSearchResultsWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(String language) {
     return Container(
       height: 300,
       margin: const EdgeInsets.all(16),
@@ -318,7 +336,7 @@ class SliverSearchResultsWidget extends ConsumerWidget {
             Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              'No plants found',
+              'no_plants_found'.tr(language),
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 18,
@@ -327,7 +345,7 @@ class SliverSearchResultsWidget extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Try searching with different keywords',
+              'try_searching_with_different_keywords'.tr(language),
               style: TextStyle(color: Colors.grey[500], fontSize: 14),
             ),
           ],
@@ -336,7 +354,7 @@ class SliverSearchResultsWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildErrorWidget() {
+  Widget _buildErrorWidget(String language) {
     return Container(
       height: 200,
       margin: const EdgeInsets.all(16),
@@ -352,7 +370,7 @@ class SliverSearchResultsWidget extends ConsumerWidget {
             Icon(Icons.error_outline, color: Colors.red.shade700, size: 48),
             const SizedBox(height: 16),
             Text(
-              'Unable to load search results',
+              'unable_to_load_search_results'.tr(language),
               style: TextStyle(
                 color: Colors.red.shade700,
                 fontWeight: FontWeight.w600,

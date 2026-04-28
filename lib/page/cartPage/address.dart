@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plant_aplication/constant/colorConst.dart';
 import 'package:plant_aplication/constant/countyData.dart';
+import 'package:plant_aplication/controller/languageController.dart';
 import 'package:plant_aplication/controller/user/addressController.dart';
 import 'package:plant_aplication/model/address.dart';
 import 'package:plant_aplication/page/cartPage/shipping.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 import 'package:plant_aplication/until/toast.dart';
 
 class AddressPage extends ConsumerStatefulWidget {
@@ -48,21 +50,26 @@ class _AddressPageState extends ConsumerState<AddressPage> {
   Widget build(BuildContext context) {
     final addresses = ref.watch(addressListProvider);
     final selectedAddress = ref.watch(selectedAddressProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final language = ref.watch(languageProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? Colors.black : Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        backgroundColor: isDark ? Colors.black : Colors.white,
+        surfaceTintColor: isDark ? Colors.black : Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? Colors.white : Colors.black,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Shipping Address',
+        title: Text(
+          'shipping_address'.tr(language),
           style: TextStyle(
-            color: Colors.black,
+            color: isDark ? Colors.white : Colors.black,
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
@@ -72,10 +79,12 @@ class _AddressPageState extends ConsumerState<AddressPage> {
         children: [
           Expanded(
             child: addresses.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
-                      'No address yet. Please add one.',
-                      style: TextStyle(color: Colors.grey),
+                      'no_address_yet'.tr(language),
+                      style: TextStyle(
+                        color: isDark ? Colors.grey[300] : Colors.grey,
+                      ),
                     ),
                   )
                 : ListView.builder(
@@ -126,7 +135,7 @@ class _AddressPageState extends ConsumerState<AddressPage> {
                 children: [
                   OutlinedButton(
                     onPressed: () {
-                      _showAddressSelector(context);
+                      _showAddressSelector(context, isDark);
                     },
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: ColorConstants.buttonColor),
@@ -135,9 +144,9 @@ class _AddressPageState extends ConsumerState<AddressPage> {
                       ),
                       minimumSize: const Size(double.infinity, 48),
                     ),
-                    child: const Text(
-                      'Add New Address',
-                      style: TextStyle(
+                    child: Text(
+                      'add_new_address'.tr(language),
+                      style: const TextStyle(
                         color: ColorConstants.buttonColor,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -151,8 +160,8 @@ class _AddressPageState extends ConsumerState<AddressPage> {
                       if (addresses.isEmpty) {
                         ToastHelper.showWarning(
                           context,
-                          'No Address',
-                          'Please add at least one address before proceeding.',
+                          'no_address_title'.tr(language),
+                          'please_add_address_first'.tr(language),
                         );
                         return;
                       }
@@ -160,8 +169,8 @@ class _AddressPageState extends ConsumerState<AddressPage> {
                       if (selected == null) {
                         ToastHelper.showWarning(
                           context,
-                          'No Default Address',
-                          'Please select or add a default address before proceeding.',
+                          'no_default_address'.tr(language),
+                          'please_select_default_address'.tr(language),
                         );
                         return;
                       }
@@ -177,9 +186,9 @@ class _AddressPageState extends ConsumerState<AddressPage> {
                       ),
                       minimumSize: const Size(double.infinity, 48),
                     ),
-                    child: const Text(
-                      'Apply',
-                      style: TextStyle(
+                    child: Text(
+                      'apply'.tr(language),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -195,10 +204,10 @@ class _AddressPageState extends ConsumerState<AddressPage> {
     );
   }
 
-  void _showAddressSelector(BuildContext context) {
+  void _showAddressSelector(BuildContext context, bool isDark) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: isDark ? Colors.white : Colors.transparent,
       isScrollControlled: true,
       builder: (BuildContext context) {
         return _AddressSelectorBottomSheet();
@@ -231,9 +240,12 @@ class _AddressSelectorBottomSheetState
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final language = ref.watch(languageProvider);
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black : Colors.white,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -257,23 +269,26 @@ class _AddressSelectorBottomSheetState
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const Text(
-                    'Select Your Address',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  Text(
+                    'select_your_address'.tr(language),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              "Province",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            Text(
+              'province'.tr(language),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<Province>(
               value: selectedProvince,
-              decoration: _inputDecoration(),
-              hint: const Text('Select Province'),
+              decoration: _inputDecoration(isDark),
+              hint: Text('select_province'.tr(language)),
               items: AddressData.provinces.map((province) {
                 return DropdownMenuItem(
                   value: province,
@@ -299,15 +314,15 @@ class _AddressSelectorBottomSheetState
               },
             ),
             const SizedBox(height: 18),
-            const Text(
-              "District",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            Text(
+              'district'.tr(language),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<District>(
               value: selectedDistrict,
-              decoration: _inputDecoration(),
-              hint: const Text('Select District'),
+              decoration: _inputDecoration(isDark),
+              hint: Text('select_district'.tr(language)),
               items: availableDistricts.map((district) {
                 return DropdownMenuItem(
                   value: district,
@@ -334,15 +349,15 @@ class _AddressSelectorBottomSheetState
                     },
             ),
             const SizedBox(height: 18),
-            const Text(
-              "Village",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            Text(
+              'village'.tr(language),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<Village>(
               value: selectedVillage,
-              decoration: _inputDecoration(),
-              hint: const Text('Select Village'),
+              decoration: _inputDecoration(isDark),
+              hint: Text('select_village'.tr(language)),
               items: availableVillages.map((village) {
                 return DropdownMenuItem(
                   value: village,
@@ -378,9 +393,9 @@ class _AddressSelectorBottomSheetState
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(
+                    child: Text(
+                      'cancel'.tr(language),
+                      style: const TextStyle(
                         color: ColorConstants.buttonColor,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -450,7 +465,8 @@ class _AddressSelectorBottomSheetState
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    result['message'] ?? 'Error saving address',
+                                    result['message'] ??
+                                        'error_saving_address'.tr(language),
                                   ),
                                   backgroundColor: Colors.red,
                                 ),
@@ -459,7 +475,9 @@ class _AddressSelectorBottomSheetState
                           },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: ColorConstants.buttonColor,
+                      backgroundColor: isDark
+                          ? ColorConstants.secondaryColor
+                          : ColorConstants.buttonColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -473,9 +491,9 @@ class _AddressSelectorBottomSheetState
                               strokeWidth: 2,
                             ),
                           )
-                        : const Text(
-                            'Save',
-                            style: TextStyle(
+                        : Text(
+                            'save'.tr(language),
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -492,10 +510,10 @@ class _AddressSelectorBottomSheetState
     );
   }
 
-  InputDecoration _inputDecoration() {
+  InputDecoration _inputDecoration(bool isDark) {
     return InputDecoration(
       filled: true,
-      fillColor: Colors.grey[100],
+      fillColor: isDark ? Colors.grey[900] : Colors.grey[100],
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -526,6 +544,8 @@ class _AnimatedAddressCardState extends State<AnimatedAddressCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: widget.onTap,
       onTapDown: (_) => setState(() => _isHovered = true),
@@ -536,14 +556,19 @@ class _AnimatedAddressCardState extends State<AnimatedAddressCard> {
         curve: Curves.easeOutCubic,
         transform: Matrix4.identity()..translate(0.0, _isHovered ? -4.0 : 0.0),
         decoration: BoxDecoration(
-          color: widget.isSelected ? const Color(0xFFE6FFF9) : Colors.white,
+          color: isDark
+              ? Colors.grey[900]
+              : (widget.isSelected ? const Color(0xFFE6FFF9) : Colors.white),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: widget.isSelected
                 ? ColorConstants.buttonColor
+                : isDark
+                ? Colors.grey[600]!
                 : Colors.grey[300]!,
             width: 2,
           ),
+
           boxShadow: [
             BoxShadow(
               color: widget.isSelected
@@ -579,15 +604,19 @@ class _AnimatedAddressCardState extends State<AnimatedAddressCard> {
                 children: [
                   Text(
                     widget.address.village,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.grey[300] : Colors.grey[600],
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     widget.address.address,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.grey[300] : Colors.grey[600],
+                    ),
                   ),
                 ],
               ),

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:plant_aplication/controller/languageController.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 
 class ToastHelper {
   static OverlayEntry? _currentOverlay;
@@ -46,7 +49,9 @@ class ToastHelper {
     String title,
     String message, {
     VoidCallback? onRetry,
+    String? language,
   }) {
+    language ??= 'en';
     showToast(
       context: context,
       title: title,
@@ -54,7 +59,9 @@ class ToastHelper {
       primaryColor: const Color(0xFFF44336),
       icon: Icons.error_outline,
       onPrimaryAction: onRetry,
-      primaryActionText: onRetry != null ? 'Retry' : 'Okay',
+      primaryActionText: onRetry != null
+          ? 'retry'.tr(language)
+          : 'okay'.tr(language),
     );
   }
 
@@ -64,7 +71,9 @@ class ToastHelper {
     String message, {
     VoidCallback? onAction,
     String? actionText,
+    String? language,
   }) {
+    language ??= 'en';
     showToast(
       context: context,
       title: title,
@@ -72,7 +81,7 @@ class ToastHelper {
       primaryColor: const Color(0xFFFFC107),
       icon: Icons.warning_amber_rounded,
       onPrimaryAction: onAction,
-      primaryActionText: actionText ?? 'Okay',
+      primaryActionText: actionText ?? 'okay'.tr(language),
     );
   }
 
@@ -367,7 +376,7 @@ class _ToastModalState extends State<_ToastModal>
                               elevation: 0,
                             ),
                             child: Text(
-                              widget.primaryActionText ?? 'Continue',
+                              widget.primaryActionText ?? 'continue'.tr('en'),
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -394,7 +403,7 @@ class _ToastModalState extends State<_ToastModal>
                               ),
                             ),
                             child: Text(
-                              widget.secondaryActionText ?? 'Cancel',
+                              widget.secondaryActionText ?? 'cancel'.tr('en'),
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,

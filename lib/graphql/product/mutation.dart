@@ -3,10 +3,10 @@ mutation ToggleWishlist($productId: String!) {
   toggleWishlist(productId: $productId) {
     status
     message
-    tag
+    tap
     data {
-      _id
-      userId
+      id
+      customerId
       productId
       isFavorite
     }

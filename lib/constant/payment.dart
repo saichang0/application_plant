@@ -25,36 +25,19 @@ class PaymentMethod {
 class PaymentMethodConstants {
   static final List<PaymentMethod> paymentMethods = [
     PaymentMethod(
-      name: 'My Wallet',
-      balance: '\$9,449',
-      icon: Icons.account_balance_wallet,
-      iconColor: Colors.white,
-      backgroundColor: const Color(0xFF00D9A3),
-    ),
-    PaymentMethod(
-      name: 'PayPal',
-      icon: Icons.paypal,
-      iconColor: const Color(0xFF003087),
+      name: 'BCEL',
+      image: 'assets/images/bcel.png',
       backgroundColor: const Color(0xFFE8F4FF),
     ),
     PaymentMethod(
-      name: 'Google Pay',
-      icon: Icons.g_mobiledata,
-      iconColor: const Color(0xFF4285F4),
+      name: 'LDB',
+      image: 'assets/images/ldb.png',
       backgroundColor: const Color(0xFFE8F0FE),
     ),
     PaymentMethod(
-      name: 'Apple Pay',
-      icon: Icons.apple,
-      iconColor: Colors.black,
+      name: 'JDB',
+      image: 'assets/images/jdb.png',
       backgroundColor: const Color(0xFFF5F5F5),
-    ),
-    PaymentMethod(
-      name: '**** **** **** 4679',
-      subtitle: 'Mastercard',
-      icon: Icons.credit_card,
-      iconColor: const Color(0xFFEB001B),
-      backgroundColor: const Color(0xFFFFF0F0),
     ),
   ];
 }

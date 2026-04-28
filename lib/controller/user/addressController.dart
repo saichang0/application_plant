@@ -11,6 +11,8 @@ class AddressController {
     required String province,
     required String district,
     required String village,
+    String country = 'Laos',
+    bool isDefault = false,
     required BuildContext context,
   }) async {
     try {
@@ -25,6 +27,8 @@ class AddressController {
               'province': province,
               'district': district,
               'village': village,
+              'country': country,
+              'isDefault': isDefault,
             },
           },
         ),
@@ -32,7 +36,7 @@ class AddressController {
       if (result.hasException) {
         return {'status': 'ERROR', 'message': result.exception.toString()};
       }
-      final response = result.data?['createUserAddress'];
+      final response = result.data?['createCustomerAddress'];
 
       if (response == null) {
         return {'status': 'ERROR', 'message': 'Empty response from server'};
@@ -56,16 +60,105 @@ class AddressController {
         debugPrint(result.exception.toString());
         return [];
       }
-      final response = result.data?['userAddresses'];
+      final response = result.data?['customerAddresses'];
       if (response == null || response['status'] != true) {
         return [];
       }
 
-      final List list = response['data'];
+      final List list = response['data'] ?? [];
       return List<Map<String, dynamic>>.from(list);
     } catch (e) {
       debugPrint(e.toString());
       return [];
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateAddress({
+    required String id,
+    String? province,
+    String? district,
+    String? village,
+    String? country,
+    bool? isDefault,
+  }) async {
+    try {
+      await checkTokenAndLogout();
+      final client = await _createClient();
+      final data = <String, dynamic>{};
+      if (province != null) data['province'] = province;
+      if (district != null) data['district'] = district;
+      if (village != null) data['village'] = village;
+      if (country != null) data['country'] = country;
+      if (isDefault != null) data['isDefault'] = isDefault;
+
+      final result = await client.mutate(
+        MutationOptions(
+          document: gql(UpdateAddress),
+          variables: {
+            'input': {'id': id, 'data': data},
+          },
+        ),
+      );
+      if (result.hasException) {
+        return {'status': 'ERROR', 'message': result.exception.toString()};
+      }
+      final response = result.data?['updateCustomerAddress'];
+      if (response == null) {
+        return {'status': 'ERROR', 'message': 'Empty response from server'};
+      }
+      return Map<String, dynamic>.from(response);
+    } catch (e) {
+      return {'status': 'ERROR', 'message': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteAddress({required String id}) async {
+    try {
+      await checkTokenAndLogout();
+      final client = await _createClient();
+      final result = await client.mutate(
+        MutationOptions(
+          document: gql(DeleteAddress),
+          variables: {
+            'input': {'id': id},
+          },
+        ),
+      );
+      if (result.hasException) {
+        return {'status': 'ERROR', 'message': result.exception.toString()};
+      }
+      final response = result.data?['deleteCustomerAddress'];
+      if (response == null) {
+        return {'status': 'ERROR', 'message': 'Empty response from server'};
+      }
+      return Map<String, dynamic>.from(response);
+    } catch (e) {
+      return {'status': 'ERROR', 'message': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> setDefaultAddress({
+    required String id,
+  }) async {
+    try {
+      await checkTokenAndLogout();
+      final client = await _createClient();
+      final result = await client.mutate(
+        MutationOptions(
+          document: gql(SetDefaultAddress),
+          variables: {'id': id},
+        ),
+      );
+      if (result.hasException) {
+        return {'status': 'ERROR', 'message': result.exception.toString()};
+      }
+      final response = result.data?['setDefaultCustomerAddress'];
+      if (response == null) {
+        return {'status': 'ERROR', 'message': 'Empty response from server'};
+      }
+      return Map<String, dynamic>.from(response);
+    } catch (e) {
+      return {'status': 'ERROR', 'message': e.toString()};
     }
   }
 

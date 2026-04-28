@@ -7,6 +7,7 @@ import 'package:plant_aplication/page/home.dart';
 import 'package:plant_aplication/page/loginPage/login.dart';
 import 'package:plant_aplication/page/registerPage/register.dart';
 import 'package:plant_aplication/services/appNavigator.dart';
+import 'package:plant_aplication/services/authHelper.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -41,7 +42,7 @@ class LoadingPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncToken = ref.watch(accessTokenProvider);
+    final asyncToken = ref.watch(authCheckProvider);
     return asyncToken.when(
       loading: () => const Scaffold(
         body: Center(
@@ -58,14 +59,11 @@ class LoadingPage extends ConsumerWidget {
       error: (error, stack) {
         return const LoginPage();
       },
-      data: (token) {
-        print('token: $token');
-        if (token != null && token.isNotEmpty) {
+      data: (isLoggedIn) {
+        if (isLoggedIn) {
           return const HomePage();
-          // return const LoginPage();
         } else {
           return const LoginPage();
-          // return const HomePage();
         }
       },
     );

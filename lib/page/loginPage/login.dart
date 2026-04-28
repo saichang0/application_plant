@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:plant_aplication/constant/colorConst.dart';
 import 'package:plant_aplication/controller/themeProvider.dart';
+import 'package:plant_aplication/controller/languageController.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 import 'package:plant_aplication/controller/user/userController.dart';
 import 'package:plant_aplication/page/loginPage/otpverification.dart';
 
@@ -22,6 +24,7 @@ final passwordErrorProvider = StateProvider<String?>((ref) => null);
 void _userLogin(BuildContext context, WidgetRef ref) {
   final email = ref.read(emailProvider).trim();
   final password = ref.read(passwordProvider).trim();
+  final language = ref.read(languageProvider);
 
   ref.read(emailErrorProvider.notifier).state = null;
   ref.read(passwordErrorProvider.notifier).state = null;
@@ -29,12 +32,15 @@ void _userLogin(BuildContext context, WidgetRef ref) {
   bool isValid = true;
 
   if (email.isEmpty) {
-    ref.read(emailErrorProvider.notifier).state = 'This field is required';
+    ref.read(emailErrorProvider.notifier).state = 'this_field_is_required'.tr(
+      language,
+    );
     isValid = false;
   }
 
   if (password.isEmpty) {
-    ref.read(passwordErrorProvider.notifier).state = 'This field is required';
+    ref.read(passwordErrorProvider.notifier).state = 'this_field_is_required'
+        .tr(language);
     isValid = false;
   }
 
@@ -57,6 +63,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final emailError = ref.watch(emailErrorProvider);
     final passwordError = ref.watch(passwordErrorProvider);
     final isDark = ref.watch(themeProvider);
+    final language = ref.watch(languageProvider);
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.white,
@@ -75,7 +82,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const SizedBox(height: 10),
                 Center(
                   child: Text(
-                    'Login to Your Account',
+                    'login_to_your_account'.tr(language),
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w600,
@@ -96,7 +103,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       },
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
-                        hintText: 'Email',
+                        hintText: 'email'.tr(language),
                         hintStyle: TextStyle(
                           color: isDark ? Colors.white : Colors.grey[400],
                         ),
@@ -162,7 +169,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       },
                       obscureText: obscurePassword,
                       decoration: InputDecoration(
-                        hintText: 'Password',
+                        hintText: 'password'.tr(language),
                         hintStyle: TextStyle(
                           color: isDark ? Colors.white : Colors.grey[400],
                         ),
@@ -244,7 +251,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Remember me',
+                      'remember_me'.tr(language),
                       style: TextStyle(
                         color: isDark ? Colors.white : Colors.black87,
                         fontSize: 14,
@@ -266,7 +273,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       elevation: 0,
                     ),
                     child: Text(
-                      'Sign in',
+                      'sign_in'.tr(language),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -292,7 +299,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         );
                       },
                       child: Text(
-                        'Forget the password?',
+                        'forget_the_password'.tr(language),
                         style: TextStyle(
                           color: ColorConstants.primaryColor,
                           fontSize: 14,
@@ -309,7 +316,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
-                        'or',
+                        'or'.tr(language),
                         style: TextStyle(
                           color: isDark ? Colors.grey[300] : Colors.grey[600],
                           fontSize: 14,
@@ -346,7 +353,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          'Sign in with Google',
+                          'sign_in_with_google'.tr(language),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -363,7 +370,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        "Don't have an account? ",
+                        '${'dont_have_account'.tr(language)} ',
                         style: TextStyle(
                           color: isDark ? Colors.grey[300] : Colors.grey[600],
                           fontSize: 14,
@@ -376,7 +383,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           Navigator.pushNamed(context, '/register');
                         },
                         child: Text(
-                          'Sign up',
+                          'sign_up'.tr(language),
                           style: TextStyle(
                             color: ColorConstants.primaryColor,
                             fontSize: 14,

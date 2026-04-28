@@ -2,6 +2,8 @@ import 'package:lottie/lottie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plant_aplication/controller/themeProvider.dart';
+import 'package:plant_aplication/controller/languageController.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 
 class AnimatedBottomNav extends ConsumerStatefulWidget {
   final int currentIndex;
@@ -27,7 +29,7 @@ class _AnimatedBottomNavState extends ConsumerState<AnimatedBottomNav>
     'assets/animations/Waving.json',
   ];
 
-  final List<String> _labels = ['Home', 'Cart', 'Orders', 'Profile'];
+  final List<String> _labelKeys = ['home', 'cart', 'orders', 'profile'];
 
   @override
   void initState() {
@@ -62,6 +64,7 @@ class _AnimatedBottomNavState extends ConsumerState<AnimatedBottomNav>
   @override
   Widget build(BuildContext context) {
     final isDark = ref.watch(themeProvider);
+    final language = ref.watch(languageProvider);
 
     return Container(
       decoration: BoxDecoration(color: isDark ? Colors.black : Colors.white),
@@ -108,7 +111,7 @@ class _AnimatedBottomNavState extends ConsumerState<AnimatedBottomNav>
                 ),
               ),
             ),
-            label: _labels[index],
+            label: _labelKeys[index].tr(language),
           );
         }),
       ),

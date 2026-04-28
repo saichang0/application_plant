@@ -1,17 +1,87 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:plant_aplication/constant/colorConst.dart';
+import 'package:plant_aplication/controller/languageController.dart';
 import 'package:plant_aplication/controller/themeProvider.dart';
 import 'package:plant_aplication/controller/user/userProfileController.dart';
+import 'package:plant_aplication/page/home.dart';
 import 'package:plant_aplication/page/profilePage/editProfile.dart';
+import 'package:plant_aplication/page/profilePage/language.dart';
+import 'package:plant_aplication/services/authStorage.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({Key? key}) : super(key: key);
+
+  Future<void> _pickProfileImage(BuildContext context, WidgetRef ref) async {
+    final isDark = ref.read(themeProvider);
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(
+                Icons.photo_camera,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+              title: Text(
+                'Camera',
+                style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+              ),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.photo_library,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+              title: Text(
+                'Gallery',
+                style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+              ),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: source, imageQuality: 85);
+      if (picked == null) return;
+
+      final currentUser = ref.read(userProvider).value ?? {};
+      await ref.read(userProvider.notifier).saveUser({
+        ...currentUser,
+        'profileImage': picked.path,
+      });
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update profile image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(userProvider);
     final isDark = ref.watch(themeProvider);
+    final language = ref.watch(languageProvider);
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFFAFAFA),
@@ -20,7 +90,7 @@ class ProfilePage extends ConsumerWidget {
         surfaceTintColor: isDark ? Colors.black : const Color(0xFFFAFAFA),
         elevation: 0,
         title: Text(
-          'Profile',
+          'profile'.tr(language),
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black,
             fontSize: 18,
@@ -44,12 +114,19 @@ class ProfilePage extends ConsumerWidget {
           child: Column(
             children: [
               const SizedBox(height: 24),
-              _buildProfileHeader(user, isDark), // Now isDark is accessible
+              _buildProfileHeader(
+                context,
+                ref,
+                user,
+                isDark,
+                language,
+              ), // Now isDark is accessible
               const SizedBox(height: 32),
               _buildMenuSection(
                 context,
                 ref,
                 isDark,
+                language,
               ), // Now isDark is accessible
               const SizedBox(height: 24),
             ],
@@ -65,18 +142,14 @@ class ProfilePage extends ConsumerWidget {
               Icon(
                 Icons.error_outline,
                 size: 64,
-                color: isDark
-                    ? Colors.grey[400]
-                    : Colors.grey, // Now isDark is accessible
+                color: isDark ? Colors.grey[400] : Colors.grey,
               ),
               const SizedBox(height: 16),
               Text(
-                'Failed to load profile',
+                'failed_to_load_profile'.tr(language),
                 style: TextStyle(
                   fontSize: 16,
-                  color: isDark
-                      ? Colors.grey[400]
-                      : Colors.grey[600], // Now isDark is accessible
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
             ],
@@ -86,12 +159,20 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileHeader(Map<String, dynamic>? user, bool isDark) {
+  Widget _buildProfileHeader(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic>? user,
+    bool isDark,
+    String language,
+  ) {
     final name = user != null
         ? "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}".trim()
-        : 'Guest';
-    final phone = user?['phone'] ?? '';
-    final profileImage = user?['profileImage'];
+        : 'guest'.tr(language);
+    final phone = user?['phoneNumber'] ?? '';
+    final profileImage = user?['profileImage'] as String?;
+    final hasImage = profileImage != null && profileImage.isNotEmpty;
+    final isRemote = hasImage && profileImage.startsWith('http');
 
     return Column(
       children: [
@@ -103,9 +184,11 @@ class ProfilePage extends ConsumerWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isDark ? Colors.grey[800] : Colors.grey[200],
-                image: profileImage != null
+                image: hasImage
                     ? DecorationImage(
-                        image: NetworkImage(profileImage),
+                        image: isRemote
+                            ? NetworkImage(profileImage) as ImageProvider
+                            : FileImage(File(profileImage)),
                         fit: BoxFit.cover,
                       )
                     : null,
@@ -114,18 +197,21 @@ class ProfilePage extends ConsumerWidget {
             Positioned(
               bottom: 0,
               right: 0,
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: ColorConstants.secondaryColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isDark ? Colors.black : Colors.white,
-                    width: 2,
+              child: GestureDetector(
+                onTap: () => _pickProfileImage(context, ref),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: ColorConstants.secondaryColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? Colors.black : Colors.white,
+                      width: 2,
+                    ),
                   ),
+                  child: const Icon(Icons.edit, color: Colors.white, size: 16),
                 ),
-                child: const Icon(Icons.edit, color: Colors.white, size: 16),
               ),
             ),
           ],
@@ -151,7 +237,12 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildMenuSection(BuildContext context, WidgetRef ref, bool isDark) {
+  Widget _buildMenuSection(
+    BuildContext context,
+    WidgetRef ref,
+    bool isDark,
+    String language,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -169,7 +260,7 @@ class ProfilePage extends ConsumerWidget {
         children: [
           _buildMenuItem(
             icon: Icons.person_outline,
-            title: 'Edit Profile',
+            title: 'edit_profile'.tr(language),
             isDark: isDark,
             onTap: () {
               Navigator.push(
@@ -181,43 +272,45 @@ class ProfilePage extends ConsumerWidget {
           _buildDivider(isDark),
           _buildMenuItem(
             icon: Icons.location_on_outlined,
-            title: 'Address',
+            title: 'address'.tr(language),
             isDark: isDark,
             onTap: () {},
           ),
           _buildDivider(isDark),
           _buildMenuItem(
             icon: Icons.notifications_outlined,
-            title: 'Notification',
+            title: 'notification'.tr(language),
             isDark: isDark,
             onTap: () {},
           ),
-          _buildDivider(isDark),
-          _buildMenuItem(
-            icon: Icons.payment_outlined,
-            title: 'Payment',
-            isDark: isDark,
-            onTap: () {},
-          ),
-          _buildDivider(isDark),
-          _buildMenuItem(
-            icon: Icons.security_outlined,
-            title: 'Security',
-            isDark: isDark,
-            onTap: () {},
-          ),
+          // _buildDivider(isDark),
+          // _buildMenuItem(
+          //   icon: Icons.payment_outlined,
+          //   title: 'Payment',
+          //   isDark: isDark,
+          //   onTap: () {},
+          // ),
           _buildDivider(isDark),
           _buildMenuItem(
             icon: Icons.language_outlined,
-            title: 'Language',
-            trailing: 'English (US)',
+            title: 'language'.tr(language),
+            trailing: language == 'en'
+                ? 'lang_en'.tr(language)
+                : 'lang_lo'.tr(language),
             isDark: isDark,
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LanguagePage()),
+              );
+            },
           ),
           _buildDivider(isDark),
           _buildMenuItem(
             icon: Icons.dark_mode_outlined,
-            title: 'Dark Mode',
+            title: isDark
+                ? 'light_mode'.tr(language)
+                : 'dark_mode'.tr(language),
             hasSwitch: true,
             isSwitchValue: ref.watch(themeProvider),
             isDark: isDark,
@@ -228,35 +321,14 @@ class ProfilePage extends ConsumerWidget {
           ),
           _buildDivider(isDark),
           _buildMenuItem(
-            icon: Icons.privacy_tip_outlined,
-            title: 'Privacy Policy',
-            isDark: isDark,
-            onTap: () {},
-          ),
-          _buildDivider(isDark),
-          _buildMenuItem(
-            icon: Icons.help_outline,
-            title: 'Help Center',
-            isDark: isDark,
-            onTap: () {},
-          ),
-          _buildDivider(isDark),
-          _buildMenuItem(
-            icon: Icons.person_add_outlined,
-            title: 'Invite Friends',
-            isDark: isDark,
-            onTap: () {},
-          ),
-          _buildDivider(isDark),
-          _buildMenuItem(
             icon: Icons.logout,
-            title: 'Logout',
+            title: 'logout'.tr(language),
             titleColor: Colors.red,
             iconColor: Colors.red,
             showArrow: false,
             isDark: isDark,
             onTap: () {
-              _showLogoutDialog(context, ref, isDark);
+              _showLogoutDialog(context, ref, isDark, language);
             },
           ),
         ],
@@ -339,14 +411,19 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  void _showLogoutDialog(BuildContext context, WidgetRef ref, bool isDark) {
+  void _showLogoutDialog(
+    BuildContext context,
+    WidgetRef ref,
+    bool isDark,
+    String language,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Logout',
+          'logout'.tr(language),
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -354,7 +431,7 @@ class ProfilePage extends ConsumerWidget {
           ),
         ),
         content: Text(
-          'Are you sure you want to logout?',
+          'are_you_want_to_logout'.tr(language),
           style: TextStyle(
             fontSize: 15,
             color: isDark ? Colors.grey[300] : Colors.black87,
@@ -366,7 +443,7 @@ class ProfilePage extends ConsumerWidget {
               Navigator.pop(context);
             },
             child: Text(
-              'Cancel',
+              'cancel'.tr(language),
               style: TextStyle(
                 fontSize: 15,
                 color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -376,12 +453,19 @@ class ProfilePage extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () async {
+              await AuthStorage.clear();
               await ref.read(userProvider.notifier).clearUser();
+              ref.read(bottomNavProvider.notifier).reset();
+              if (!context.mounted) return;
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/login');
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/login',
+                (route) => false,
+              );
             },
-            child: const Text(
-              'Logout',
+            child: Text(
+              'confirm'.tr(language),
               style: TextStyle(
                 fontSize: 15,
                 color: Colors.red,

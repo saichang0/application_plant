@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:plant_aplication/constant/colorConst.dart';
 import 'package:plant_aplication/controller/themeProvider.dart';
+import 'package:plant_aplication/controller/languageController.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 import 'package:plant_aplication/controller/user/userController.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
@@ -33,6 +35,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     final email = ref.read(emailRegisterProvider).trim();
     final phone = ref.read(phoneProvider).trim();
     final password = ref.read(passwordRegisterProvider);
+    final language = ref.read(languageProvider);
 
     // Reset all errors
     ref.read(firstNameErrorProvider.notifier).state = null;
@@ -45,29 +48,29 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
     if (firstName.isEmpty) {
       ref.read(firstNameErrorProvider.notifier).state =
-          'This field is required';
+          'this_field_is_required'.tr(language);
       isValid = false;
     }
 
     if (lastName.isEmpty) {
-      ref.read(lastNameErrorProvider.notifier).state = 'This field is required';
+      ref.read(lastNameErrorProvider.notifier).state = 'this_field_is_required'.tr(language);
       isValid = false;
     }
 
     if (email.isEmpty) {
       ref.read(emailRegisterErrorProvider.notifier).state =
-          'This field is required';
+          'this_field_is_required'.tr(language);
       isValid = false;
     }
 
     if (phone.isEmpty) {
-      ref.read(phoneErrorProvider.notifier).state = 'This field is required';
+      ref.read(phoneErrorProvider.notifier).state = 'this_field_is_required'.tr(language);
       isValid = false;
     }
 
     if (password.isEmpty) {
       ref.read(passwordRegisterErrorProvider.notifier).state =
-          'This field is required';
+          'this_field_is_required'.tr(language);
       isValid = false;
     }
 
@@ -103,6 +106,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     final phoneError = ref.watch(phoneErrorProvider);
     final passwordError = ref.watch(passwordRegisterErrorProvider);
     final isDark = ref.watch(themeProvider);
+    final language = ref.watch(languageProvider);
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.white,
@@ -122,7 +126,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               ),
               Center(
                 child: Text(
-                  'Create Your Account',
+                  'create_your_account'.tr(language),
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
@@ -136,7 +140,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 provider: firstNameProvider,
                 errorProvider: firstNameErrorProvider,
                 error: firstNameError,
-                hint: 'First Name',
+                hint: 'first_name'.tr(language),
                 icon: Icons.person_outline,
                 isDark: isDark,
               ),
@@ -146,7 +150,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 provider: lastNameProvider,
                 errorProvider: lastNameErrorProvider,
                 error: lastNameError,
-                hint: 'Last Name',
+                hint: 'last_name'.tr(language),
                 icon: Icons.person_4,
                 isDark: isDark,
               ),
@@ -156,7 +160,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 provider: emailRegisterProvider,
                 errorProvider: emailRegisterErrorProvider,
                 error: emailError,
-                hint: 'Email',
+                hint: 'email'.tr(language),
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 isDark: isDark,
@@ -167,7 +171,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 provider: phoneProvider,
                 errorProvider: phoneErrorProvider,
                 error: phoneError,
-                hint: '20 777 777',
+                hint: 'phone_placeholder'.tr(language),
                 icon: Icons.phone_outlined,
                 keyboardType: TextInputType.phone,
                 isDark: isDark,
@@ -178,7 +182,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 provider: passwordRegisterProvider,
                 errorProvider: passwordRegisterErrorProvider,
                 error: passwordError,
-                hint: 'Password',
+                hint: 'password'.tr(language),
                 icon: Icons.lock_outline,
                 obscure: true,
                 obscurePassword: obscurePassword,
@@ -216,8 +220,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             ),
                           ),
                         )
-                      : const Text(
-                          'Sign up',
+                      : Text(
+                          'sign_up'.tr(language),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -233,7 +237,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
-                      'or',
+                      'or'.tr(language),
                       style: TextStyle(
                         color: isDark ? Colors.grey[300] : Colors.grey[600],
                         fontSize: 14,
@@ -270,7 +274,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        'Sign in with Google',
+                        'sign_in_with_google'.tr(language),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -287,7 +291,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "Already have an account? ",
+                      'already_have_account'.tr(language),
                       style: TextStyle(
                         color: isDark ? Colors.grey[300] : Colors.grey[600],
                         fontSize: 14,
@@ -305,7 +309,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         Navigator.pushReplacementNamed(context, '/login');
                       },
                       child: Text(
-                        'Login',
+                        'login'.tr(language),
                         style: TextStyle(
                           color: ColorConstants.primaryColor,
                           fontSize: 14,

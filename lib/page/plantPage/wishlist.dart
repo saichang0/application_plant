@@ -1,6 +1,7 @@
 import 'package:lottie/lottie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:plant_aplication/controller/languageController.dart';
 import 'package:plant_aplication/controller/themeProvider.dart';
 import 'package:plant_aplication/model/plant.dart';
 import 'package:plant_aplication/page/plantPage/plant.dart';
@@ -8,8 +9,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plant_aplication/constant/colorConst.dart';
 import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:plant_aplication/page/widget/plantSearch.dart';
+import 'package:plant_aplication/page/plantPage/plantDetail.dart';
 import 'package:plant_aplication/page/plantPage/widget/plantcardWidget.dart';
 import 'package:plant_aplication/controller/product/productcontroller.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 
 final wishlistCategoryProvider = StateProvider<String>((ref) => 'All');
 final wishlistProductsProvider =
@@ -26,24 +29,39 @@ class WishlistNotifier extends StateNotifier<AsyncValue<List<Plant>>> {
     try {
       state = const AsyncLoading();
       final data = await ProductController.wishlist();
-      final plants = data.map((e) {
+      debugPrint('wishlist items count: ${data.length}');
+      final plants = <Plant>[];
+      for (final e in data) {
         final product = e['product'];
-        return Plant.fromGraphQL({...product, 'isFavorite': true});
-      }).toList();
+        if (product is! Map) {
+          debugPrint('wishlist entry skipped (no product): $e');
+          continue;
+        }
+        plants.add(
+          Plant.fromGraphQL({
+            ...Map<String, dynamic>.from(product),
+            'isFavorite': true,
+          }),
+        );
+      }
       state = AsyncData(plants);
     } catch (e, st) {
+      debugPrint('loadWishlist error: $e');
       state = AsyncError(e, st);
     }
   }
 
   void updateFavorite(String productId, bool isFavorite) {
     state.whenData((plants) {
-      final updatedPlants = plants.map((p) {
-        if (p.id == productId) {
-          return p.copyWith(isFavorite: isFavorite);
-        }
-        return p;
-      }).toList();
+      if (!isFavorite) {
+        state = AsyncData(plants.where((p) => p.id != productId).toList());
+        return;
+      }
+      final updatedPlants = plants
+          .map(
+            (p) => p.id == productId ? p.copyWith(isFavorite: isFavorite) : p,
+          )
+          .toList();
       state = AsyncData(updatedPlants);
     });
   }
@@ -64,14 +82,6 @@ class _WishlistPageState extends ConsumerState<WishlistPage>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      ref.read(wishlistProductsProvider.notifier).loadWishlist();
-    });
-  }
 
   Future<void> _handleFavoriteToggle(
     String productId,
@@ -100,6 +110,9 @@ class _WishlistPageState extends ConsumerState<WishlistPage>
         ref
             .read(productsProvider.notifier)
             .updateFavorite(productId, isFavorite);
+        ref
+            .read(favoriteProductsProvider.notifier)
+            .setFavorite(productId, isFavorite);
       }
     } catch (e) {
       if (mounted) {
@@ -123,6 +136,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage>
     super.build(context);
     final wishlistAsync = ref.watch(wishlistProductsProvider);
     final isDark = ref.watch(themeProvider);
+    final language = ref.watch(languageProvider);
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.grey[50],
@@ -175,13 +189,54 @@ class _WishlistPageState extends ConsumerState<WishlistPage>
         },
         child: CustomScrollView(
           slivers: [
-            _buildSliverAppBar(isDark),
+            _buildSliverAppBar(isDark, language),
             wishlistAsync.when(
               loading: () => const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (e, _) => SliverFillRemaining(
-                child: Center(child: Text('Error loading wishlist')),
+                hasScrollBody: false,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 56,
+                        color: isDark ? Colors.white70 : Colors.grey[600],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Error loading wishlist',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        e.toString(),
+                        textAlign: TextAlign.center,
+                        maxLines: 5,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => ref
+                            .read(wishlistProductsProvider.notifier)
+                            .loadWishlist(),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               data: (_) => const SliverToBoxAdapter(child: SizedBox.shrink()),
             ),
@@ -202,7 +257,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage>
     );
   }
 
-  Widget _buildSliverAppBar(bool isDark) {
+  Widget _buildSliverAppBar(bool isDark, String language) {
     return SliverAppBar(
       expandedHeight: 80.0,
       floating: false,
@@ -218,7 +273,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage>
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
-        'My Wishlist',
+        'my_wishlist'.tr(language),
         style: TextStyle(
           color: isDark ? Colors.white : Colors.black,
           fontSize: 20,
@@ -241,7 +296,14 @@ class _WishlistPageState extends ConsumerState<WishlistPage>
 
   Widget _buildStickyCategoryChips(bool isDark) {
     final selectedCategory = ref.watch(wishlistCategoryProvider);
-    final categories = ['All', 'Monstera', 'Aloe', 'Palm', 'Jade'];
+    final wishlistAsync = ref.watch(wishlistProductsProvider);
+    final plants = wishlistAsync.asData?.value ?? const <Plant>[];
+    final unique = <String>{};
+    for (final p in plants) {
+      final name = p.categoryName;
+      if (name != null && name.trim().isNotEmpty) unique.add(name);
+    }
+    final categories = ['All', ...unique];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       color: isDark ? Colors.black : Colors.white,
@@ -257,23 +319,39 @@ class _WishlistPageState extends ConsumerState<WishlistPage>
 
             return Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text(category),
-                selected: isSelected,
-                onSelected: (selected) {
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
                   ref.read(wishlistCategoryProvider.notifier).state = category;
                 },
-                backgroundColor: isDark ? Colors.black : Colors.white,
-                selectedColor: ColorConstants.secondaryColor,
-                labelStyle: TextStyle(
-                  color: isSelected
-                      ? Colors.white
-                      : ColorConstants.secondaryColor,
-                  fontWeight: FontWeight.w600,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeInOut,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? ColorConstants.secondaryColor
+                        : (isDark ? Colors.black : Colors.white),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: ColorConstants.secondaryColor,
+                      width: 1,
+                    ),
+                  ),
+                  child: AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeInOut,
+                    style: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : ColorConstants.secondaryColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    child: Text(category),
+                  ),
                 ),
-                side: const BorderSide(color: ColorConstants.secondaryColor),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                showCheckmark: false,
               ),
             );
           },
@@ -296,10 +374,9 @@ class _WishlistPageState extends ConsumerState<WishlistPage>
       data: (plants) {
         final filteredPlants = selectedCategory == 'All'
             ? plants
-            : plants.where((plant) {
-                // add category logic later
-                return true;
-              }).toList();
+            : plants
+                  .where((plant) => plant.categoryName == selectedCategory)
+                  .toList();
 
         if (filteredPlants.isEmpty) {
           return SliverToBoxAdapter(
@@ -345,6 +422,14 @@ class _WishlistPageState extends ConsumerState<WishlistPage>
               return PlantCard(
                 key: ValueKey(plant.id),
                 plant: plant,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PlantDetailPage(plantId: plant.id),
+                    ),
+                  );
+                },
                 onFavoritePressed: () =>
                     _handleFavoriteToggle(plant.id, plant.isFavorite),
               );
@@ -384,6 +469,6 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_StickyHeaderDelegate oldDelegate) {
-    return oldDelegate.height != height;
+    return oldDelegate.height != height || oldDelegate.child != child;
   }
 }

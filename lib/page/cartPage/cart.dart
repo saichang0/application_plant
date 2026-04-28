@@ -6,8 +6,10 @@ import 'package:plant_aplication/constant/colorConst.dart';
 import 'package:plant_aplication/controller/product/addItem.dart';
 import 'package:plant_aplication/controller/themeProvider.dart';
 import 'package:plant_aplication/model/itemCart.dart';
+import 'package:plant_aplication/page/cartPage/address.dart';
 import 'package:plant_aplication/page/cartPage/checkOut.dart';
-import 'package:plant_aplication/page/widget/plantSearch.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
+import 'package:plant_aplication/controller/languageController.dart';
 
 class CartPage extends ConsumerStatefulWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -45,6 +47,7 @@ class _CartPageState extends ConsumerState<CartPage>
     final cartItems = ref.watch(cartProvider);
     final totalPrice = ref.watch(cartTotalPriceProvider);
     final isDark = ref.watch(themeProvider);
+    final language = ref.watch(languageProvider);
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.grey[50],
@@ -53,7 +56,7 @@ class _CartPageState extends ConsumerState<CartPage>
         surfaceTintColor: isDark ? Colors.black : Colors.white,
         elevation: 0,
         title: Text(
-          'My Cart',
+          'my_cart'.tr(language),
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black,
             fontSize: 20,
@@ -68,16 +71,16 @@ class _CartPageState extends ConsumerState<CartPage>
               color: isDark ? Colors.white : Colors.black,
             ),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => PlantSearchPage()),
-              );
+              // Navigator.push(
+              //   context,
+              //   MaterialPageRoute(builder: (context) => PlantSearchPage()),
+              // );
             },
           ),
         ],
       ),
       body: cartItems.isEmpty
-          ? _buildEmptyCart(isDark)
+          ? _buildEmptyCart(isDark, language)
           : Column(
               children: [
                 Expanded(
@@ -88,17 +91,17 @@ class _CartPageState extends ConsumerState<CartPage>
                         const SizedBox(height: 16),
                     itemBuilder: (context, index) {
                       final item = cartItems[index];
-                      return _buildCartItem(item, isDark);
+                      return _buildCartItem(item, isDark, language);
                     },
                   ),
                 ),
-                _buildBottomCheckout(totalPrice, isDark),
+                _buildBottomCheckout(totalPrice, isDark, language),
               ],
             ),
     );
   }
 
-  Widget _buildEmptyCart(bool isDark) {
+  Widget _buildEmptyCart(bool isDark, String language) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -116,7 +119,7 @@ class _CartPageState extends ConsumerState<CartPage>
           ),
           const SizedBox(height: 16),
           Text(
-            'Your cart is empty',
+            'your_cart_is_empty'.tr(language),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -125,9 +128,7 @@ class _CartPageState extends ConsumerState<CartPage>
           ),
           const SizedBox(height: 8),
           Text(
-            "You don't have any items added to your cart yet.\n"
-            "You need to add items to your cart before\n"
-            "checkout.",
+            'cart_empty_description'.tr(language).replaceAll('\\n', '\n'),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -139,7 +140,7 @@ class _CartPageState extends ConsumerState<CartPage>
     );
   }
 
-  Widget _buildCartItem(CartItem item, bool isDark) {
+  Widget _buildCartItem(CartItem item, bool isDark, String language) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -228,7 +229,7 @@ class _CartPageState extends ConsumerState<CartPage>
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.grey),
             onPressed: () {
-              _showRemoveConfirmationDialog(context, item, isDark);
+              _showRemoveConfirmationDialog(context, item, isDark, language);
             },
           ),
         ],
@@ -240,6 +241,7 @@ class _CartPageState extends ConsumerState<CartPage>
     BuildContext context,
     CartItem item,
     bool isDark,
+    String language,
   ) {
     showModalBottomSheet(
       context: context,
@@ -269,7 +271,7 @@ class _CartPageState extends ConsumerState<CartPage>
                   ),
                 ),
                 Text(
-                  'Remove From Cart?',
+                  'remove_item'.tr(language),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -356,7 +358,7 @@ class _CartPageState extends ConsumerState<CartPage>
                           ),
                         ),
                         child: Text(
-                          'Cancel',
+                          'cancel'.tr(language),
                           style: TextStyle(
                             color: isDark
                                 ? Colors.white
@@ -382,7 +384,7 @@ class _CartPageState extends ConsumerState<CartPage>
                           ),
                         ),
                         child: Text(
-                          'Yes, Remove',
+                          'yes_remove'.tr(language),
                           style: TextStyle(
                             color: isDark ? Colors.white : Colors.white,
                             fontSize: 16,
@@ -402,7 +404,7 @@ class _CartPageState extends ConsumerState<CartPage>
     );
   }
 
-  Widget _buildBottomCheckout(double totalPrice, bool isDark) {
+  Widget _buildBottomCheckout(double totalPrice, bool isDark, String language) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -429,7 +431,7 @@ class _CartPageState extends ConsumerState<CartPage>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Total Price',
+                '${'total_price'.tr(language)} ',
                 style: TextStyle(
                   fontSize: 12,
                   color: isDark ? Colors.white : Colors.grey[600],
@@ -451,7 +453,7 @@ class _CartPageState extends ConsumerState<CartPage>
               onPressed: () {
                 Navigator.of(
                   context,
-                ).push(MaterialPageRoute(builder: (_) => CheckoutPage()));
+                ).push(MaterialPageRoute(builder: (_) => AddressPage()));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: isDark
@@ -466,7 +468,7 @@ class _CartPageState extends ConsumerState<CartPage>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Checkout',
+                    'checkout'.tr(language),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

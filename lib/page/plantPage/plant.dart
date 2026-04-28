@@ -17,6 +17,8 @@ import 'package:plant_aplication/controller/product/productcontroller.dart';
 import 'package:plant_aplication/controller/user/userProfileController.dart';
 import 'package:plant_aplication/page/plantPage/widget/plantcardWidget.dart';
 import 'package:plant_aplication/page/plantPage/widget/searchResultWidget.dart';
+import 'package:plant_aplication/controller/languageController.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 
 final selectedCategoryProvider = StateProvider<String>((ref) => 'All');
 final searchKeywordProvider = StateProvider<String>((ref) => '');
@@ -24,27 +26,23 @@ final currentPageProvider = StateProvider<int>((ref) => 1);
 final itemsPerPageProvider = StateProvider<int>((ref) => 50);
 
 final mostPopularProvider = FutureProvider<List<Plant>>((ref) async {
-  try {
-    final data = await ProductController.queryProducts();
-    print("🔥 Raw Product Data: $data");
+  final data = await ProductController.queryProducts(
+    page: 1,
+    limit: 100,
+    isPopular: true,
+  );
 
-    final converted = data.map((item) => Plant.fromGraphQL(item)).toList();
-    print("🔥 Converted Model: $converted");
-
-    return converted;
-  } catch (e, stack) {
-    print("❌ Provider Exception: $e");
-    print(stack);
-    rethrow;
-  }
+  return data.map((item) => Plant.fromGraphQL(item)).toList();
 });
 
 final specialOffersProvider = FutureProvider<List<Plant>>((ref) async {
-  final data = await ProductController.queryProducts();
-  return data
-      .where((item) => item['isSpecialOffer'] == true)
-      .map((item) => Plant.fromGraphQL(item))
-      .toList();
+  final data = await ProductController.queryProducts(
+    page: 1,
+    limit: 10,
+    isSpecialOffer: true,
+  );
+
+  return data.map((item) => Plant.fromGraphQL(item)).toList();
 });
 
 final productsProvider =
@@ -82,16 +80,16 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
   final FocusNode expandedSearchFocus = FocusNode();
   final TextEditingController searchController = TextEditingController();
 
-  String getGreeting() {
+  String getGreeting(String language) {
     final hour = DateTime.now().hour;
     if (hour >= 5 && hour < 12) {
-      return "Good Morning 👋";
+      return 'good_morning'.tr(language);
     } else if (hour >= 12 && hour < 18) {
-      return "Good Afternoon 🌞";
+      return 'good_afternoon'.tr(language);
     } else if (hour >= 18 && hour < 23) {
-      return "Good Evening 🌆";
+      return 'good_evening'.tr(language);
     } else {
-      return "Good Night 🌙";
+      return 'good_night'.tr(language);
     }
   }
 
@@ -161,6 +159,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
     final isSearching = searchKeyword.isNotEmpty;
     final isLoading = specialOffers.isLoading || mostPopular.isLoading;
     final isDark = ref.watch(themeProvider);
+    final language = ref.watch(languageProvider);
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.grey[50],
@@ -213,7 +212,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
         },
         child: CustomScrollView(
           slivers: [
-            _buildAnimatedSliverAppBar(isDark),
+            _buildAnimatedSliverAppBar(isDark, language),
             if (isLoading)
               const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator()),
@@ -221,19 +220,19 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
             else if (isSearching) ...[
               _buildSearchResults(isDark),
             ] else ...[
-              _buildSpecialOffersSection(isDark),
+              _buildSpecialOffersSection(isDark, language),
               const SliverToBoxAdapter(child: SizedBox(height: 10)),
-              _buildMostPopularHeader(isDark),
+              _buildMostPopularHeader(isDark, language),
               const SliverToBoxAdapter(child: SizedBox(height: 12)),
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _StickyHeaderDelegate(
                   height: 56,
-                  child: _buildStickyCategoryChips(isDark),
+                  child: _buildStickyCategoryChips(isDark, language),
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
-              _buildMostPopularSliverGrid(isDark),
+              _buildMostPopularSliverGrid(isDark, language),
               const SliverToBoxAdapter(child: SizedBox(height: 20)),
             ],
           ],
@@ -277,13 +276,13 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
     ref.read(currentPageProvider.notifier).state = 1;
   }
 
-  Widget _buildAnimatedSliverAppBar(bool isDark) {
+  Widget _buildAnimatedSliverAppBar(bool isDark, String language) {
     final userState = ref.watch(userProvider);
 
     final user = userState.asData?.value;
     final userName = user != null
         ? "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}".trim()
-        : 'Guest';
+        : 'guest'.tr(language);
     final userAvatar = user?['profileImage'];
 
     return SliverAppBar(
@@ -325,7 +324,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  getGreeting(),
+                                  getGreeting(language),
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: isDark
@@ -420,7 +419,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
     );
   }
 
-  Widget _buildMostPopularHeader(bool isDark) {
+  Widget _buildMostPopularHeader(bool isDark, String language) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -428,7 +427,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Most Popular',
+              'most_popular'.tr(language),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -443,7 +442,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
                 );
               },
               child: Text(
-                'See All',
+                'see_all'.tr(language),
                 style: TextStyle(
                   color: isDark ? ColorConstants.secondaryColor : Colors.green,
                   fontWeight: FontWeight.w600,
@@ -456,7 +455,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
     );
   }
 
-  Widget _buildSpecialOffersSection(bool isDark) {
+  Widget _buildSpecialOffersSection(bool isDark, String language) {
     final specialOffers = ref.watch(specialOffersProvider);
     final favoriteProductIds = ref.watch(favoriteProductsProvider);
 
@@ -475,7 +474,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
             ),
             child: Center(
               child: Text(
-                'Unable to load special offers',
+                'unable_to_load_special_offers'.tr(language),
                 style: TextStyle(color: Colors.red.shade700),
               ),
             ),
@@ -495,7 +494,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Special Offers',
+                      'special_offers'.tr(language),
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -512,7 +511,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
                         );
                       },
                       child: Text(
-                        'See All',
+                        'see_all'.tr(language),
                         style: TextStyle(
                           color: isDark
                               ? ColorConstants.secondaryColor
@@ -571,9 +570,16 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
     );
   }
 
-  Widget _buildStickyCategoryChips(bool isDark) {
+  Widget _buildStickyCategoryChips(bool isDark, String language) {
     final selectedCategory = ref.watch(selectedCategoryProvider);
-    final categories = ['All', 'Monstera', 'Aloe', 'Palm', 'Jade'];
+    final productsAsync = ref.watch(productsProvider);
+    final plants = productsAsync.asData?.value ?? const <Plant>[];
+    final unique = <String>{};
+    for (final p in plants) {
+      final name = p.categoryName;
+      if (name != null && name.trim().isNotEmpty) unique.add(name);
+    }
+    final categories = ['All', ...unique];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: SizedBox(
@@ -588,7 +594,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: FilterChip(
-                label: Text(category),
+                label: Text(category == 'All' ? 'all'.tr(language) : category),
                 selected: isSelected,
                 onSelected: (selected) {
                   ref.read(selectedCategoryProvider.notifier).state = category;
@@ -612,7 +618,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
     );
   }
 
-  Widget _buildMostPopularSliverGrid(bool isDark) {
+  Widget _buildMostPopularSliverGrid(bool isDark, String language) {
     final mostPopular = ref.watch(productsProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final favoriteProductIds = ref.watch(favoriteProductsProvider);
@@ -641,7 +647,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Unable to load popular plants',
+                    'unable_to_load_popular_plants'.tr(language),
                     style: TextStyle(
                       color: Colors.red.shade700,
                       fontWeight: FontWeight.w600,
@@ -656,9 +662,9 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
       data: (plants) {
         final filteredPlants = selectedCategory == 'All'
             ? plants
-            : plants.where((plant) {
-                return true;
-              }).toList();
+            : plants
+                  .where((plant) => plant.categoryName == selectedCategory)
+                  .toList();
 
         if (filteredPlants.isEmpty) {
           return SliverToBoxAdapter(
@@ -676,7 +682,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
                     ),
                     SizedBox(height: 16),
                     Text(
-                      'No plants found',
+                      'no_plants_found'.tr(language),
                       style: TextStyle(
                         color: isDark ? Colors.white : Colors.grey,
                         fontSize: 16,
@@ -764,7 +770,7 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_StickyHeaderDelegate oldDelegate) {
-    return oldDelegate.height != height;
+    return oldDelegate.height != height || oldDelegate.child != child;
   }
 }
 

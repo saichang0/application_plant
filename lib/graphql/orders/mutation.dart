@@ -1,37 +1,98 @@
 const CreateOrder = r'''
-mutation CreateOrder($input: OrderInput!) {
-  createOrder(input: $input) {
+mutation PlaceOrder($input: PlaceOrderInput!) {
+  placeOrder(input: $input) {
     status
     message
-    tag
-    data {
-      _id
+    tap
+    sale {
+      id
+      customerId
       userId
-      orderNumber
+      saleDate
       totalAmount
-      status
-      shippingAddressId
-      shippingMethod
-      shippingCost
-      estimatedDelivery
-      paymentMethod
-      paymentStatus
-      promoCodeId
+      taxAmount
       discountAmount
-      orderItems {
-        _id
-        orderId
-        productId
+      status
+      customerName
+      note
+      customerAddressId
+      updatedAt
+      saleDetails {
+        id
         quantity
+        unitId
+        weightGrams
         unitPrice
         totalPrice
-        createAt
-        updateAt
+        note
+        product {
+          id
+          name
+          imageUrl
+        }
+        unit {
+          id
+          name
+        }
       }
-      createdAt
+      payments {
+        id
+        paymentMethod
+        currency
+        amount
+        slipImageUrl
+        paidAt
+      }
+      customerAddress {
+        id
+        province
+        district
+        village
+        country
+      }
+      deliveries {
+        id
+        deliveryService
+        branch
+        trackingNumber
+        status
+        shippedAt
+      }
+    }
+  }
+}
+''';
+
+const ConfirmOrderReceived = r'''
+mutation ConfirmOrderReceived($id: ID!) {
+  confirmOrderReceived(id: $id) {
+    status
+    message
+    tap
+    sale {
+      id
+      status
       updatedAt
-      createBy
-      updateBy
+    }
+  }
+}
+''';
+
+const CreateReview = r'''
+mutation CreateReview($input: CreateProductReviewInput!) {
+  createReview(input: $input) {
+    tap
+    status
+    message
+    data {
+      id
+      productId
+      customerId
+      saleId
+      rating
+      comment
+      isVerifiedPurchase
+      createdAt
     }
   }
 }

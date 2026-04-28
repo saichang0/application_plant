@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:plant_aplication/constant/colorConst.dart';
+import 'package:plant_aplication/controller/languageController.dart';
 import 'package:plant_aplication/controller/user/userProfileController.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
   const EditProfilePage({Key? key}) : super(key: key);
@@ -10,15 +13,19 @@ class EditProfilePage extends ConsumerStatefulWidget {
 }
 
 class _EditProfilePageState extends ConsumerState<EditProfilePage> {
-  late TextEditingController _nameController;
+  late TextEditingController _firstNameController;
+  late TextEditingController _lastNameController;
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
+
   bool _isLoading = false;
+  bool _isEditing = false;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
+    _firstNameController = TextEditingController();
+    _lastNameController = TextEditingController();
     _phoneController = TextEditingController();
     _emailController = TextEditingController();
     _loadUserData();
@@ -28,8 +35,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     final userAsync = ref.read(userProvider);
     userAsync.whenData((userData) {
       if (userData != null) {
-        _nameController.text = userData['name'] ?? '';
-        _phoneController.text = userData['phone'] ?? '';
+        _firstNameController.text = userData['firstName'] ?? '';
+        _lastNameController.text = userData['lastName'] ?? '';
+        _phoneController.text = userData['phoneNumber'] ?? '';
         _emailController.text = userData['email'] ?? '';
       }
     });
@@ -37,7 +45,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     super.dispose();
@@ -54,8 +63,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
       final updatedUserData = {
         ...currentUserData,
-        'name': _nameController.text,
-        'phone': _phoneController.text,
+        'firstName': _firstNameController.text,
+        'lastName': _lastNameController.text,
+        'phoneNumber': _phoneController.text,
         'email': _emailController.text,
       };
 
@@ -64,17 +74,19 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Profile updated successfully!'),
-            backgroundColor: Color(0xFF00D4AA),
+            content: Text('ອັບເດດຂໍ້ມູນສຳເລັດ'),
+            backgroundColor: ColorConstants.accentDarkGreenColor,
           ),
         );
-        Navigator.pop(context);
+        setState(() {
+          _isEditing = false;
+        });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to update profile: $e'),
+            content: Text('ອັບເດດຂໍ້ມູນບໍ່ສຳເລັດ: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -90,141 +102,202 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final language = ref.watch(languageProvider);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: isDark ? Colors.black : const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: ColorConstants.accentDarkGreenColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Edit Profile',
+        title: Text(
+          'profile_details'.tr(language),
           style: TextStyle(
-            color: Colors.black,
+            color: Colors.white,
             fontSize: 18,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w500,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _isEditing ? Icons.close : Icons.edit,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                _isEditing = !_isEditing;
+              });
+            },
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              // Name Field
-              _buildTextField(
-                controller: _nameController,
-                label: 'Full Name',
-                icon: Icons.person_outline,
-                hint: 'Enter your name',
-              ),
-              const SizedBox(height: 20),
-              // Phone Field
-              _buildTextField(
-                controller: _phoneController,
-                label: 'Phone Number',
-                icon: Icons.phone_outlined,
-                hint: 'Enter your phone number',
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 20),
-              // Email Field
-              _buildTextField(
-                controller: _emailController,
-                label: 'Email',
-                icon: Icons.email_outlined,
-                hint: 'Enter your email',
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 32),
-              // Save Button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _saveProfile,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00D4AA),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Container(
+                color: isDark ? Colors.grey[900] : Colors.white,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    _buildProfileField(
+                      label: 'first_name'.tr(language),
+                      controller: _firstNameController,
+                      enabled: _isEditing,
+                      isDark: isDark,
                     ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          'Save Changes',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                    _buildDivider(),
+                    const SizedBox(height: 20),
+                    _buildProfileField(
+                      label: 'last_name'.tr(language),
+                      controller: _lastNameController,
+                      enabled: _isEditing,
+                      isDark: isDark,
+                    ),
+                    _buildDivider(),
+                    const SizedBox(height: 20),
+                    _buildProfileField(
+                      label: 'email'.tr(language),
+                      controller: _emailController,
+                      enabled: _isEditing,
+                      keyboardType: TextInputType.emailAddress,
+                      isDark: isDark,
+                    ),
+                    _buildDivider(),
+                    const SizedBox(height: 20),
+                    _buildProfileField(
+                      label: 'phone'.tr(language),
+                      controller: _phoneController,
+                      enabled: _isEditing,
+                      keyboardType: TextInputType.phone,
+                      isDark: isDark,
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+          if (_isEditing)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[800] : Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _saveProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ColorConstants.accentDarkGreenColor,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'ບັນທຶກການປ່ຽນແປງ',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
+  Widget _buildProfileField({
     required String label,
-    required IconData icon,
-    required String hint,
+    required TextEditingController controller,
+    required bool enabled,
+    required bool isDark,
+    bool obscureText = false,
     TextInputType? keyboardType,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(fontSize: 14, color: Colors.grey[400]),
-            prefixIcon: Icon(icon, color: Colors.grey[600], size: 20),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF00D4AA), width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.white : Colors.grey[600],
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              enabled: enabled,
+              obscureText: obscureText,
+              keyboardType: keyboardType,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w400,
+              ),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: enabled ? 'ກະລຸນາໃສ່ຂໍ້ມູນ' : '',
+                hintStyle: TextStyle(fontSize: 14, color: Colors.grey[400]),
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        height: 1,
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: Colors.grey[300]!,
+              width: 1,
+              style: BorderStyle.solid,
+            ),
+          ),
         ),
-      ],
+      ),
     );
   }
 }

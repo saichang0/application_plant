@@ -1,6 +1,7 @@
 import 'package:lottie/lottie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:plant_aplication/controller/languageController.dart';
 import 'package:plant_aplication/controller/themeProvider.dart';
 import 'package:plant_aplication/model/plant.dart';
 import 'package:plant_aplication/page/plantPage/plant.dart';
@@ -10,6 +11,7 @@ import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:plant_aplication/page/widget/plantSearch.dart';
 import 'package:plant_aplication/page/plantPage/widget/plantcardWidget.dart';
 import 'package:plant_aplication/controller/product/productcontroller.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 
 final SpecialCategoryProvider = StateProvider<String>((ref) => 'All');
 final SpecialProductsProvider =
@@ -26,7 +28,11 @@ class SpecialNotifier extends StateNotifier<AsyncValue<List<Plant>>> {
     try {
       state = const AsyncLoading();
 
-      final data = await ProductController.queryProducts(isSpecialOffer: true);
+      final data = await ProductController.queryProducts(
+        page: 1,
+        limit: 100,
+        isSpecialOffer: true,
+      );
       print('🔥 Special Offers Raw Data: $data');
       final plants = data.map((productMap) {
         return Plant.fromGraphQL(productMap);
@@ -126,6 +132,7 @@ class _SpecialOffersPageState extends ConsumerState<SpecialOffersPage>
   Widget build(BuildContext context) {
     super.build(context);
     final SpecialAsync = ref.watch(SpecialProductsProvider);
+    final language = ref.watch(languageProvider);
     final isDark = ref.watch(themeProvider);
 
     return Scaffold(
@@ -194,7 +201,7 @@ class _SpecialOffersPageState extends ConsumerState<SpecialOffersPage>
                 pinned: true,
                 delegate: _StickyHeaderDelegate(
                   height: 56,
-                  child: _buildStickyCategoryChips(isDark),
+                  child: _buildStickyCategoryChips(isDark, language),
                 ),
               ),
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
@@ -243,9 +250,17 @@ class _SpecialOffersPageState extends ConsumerState<SpecialOffersPage>
     );
   }
 
-  Widget _buildStickyCategoryChips(bool isDark) {
+  Widget _buildStickyCategoryChips(bool isDark, String language) {
     final selectedCategory = ref.watch(SpecialCategoryProvider);
-    final categories = ['All', 'Monstera', 'Aloe', 'Palm', 'Jade'];
+    final specialAsync = ref.watch(SpecialProductsProvider);
+    final plants = specialAsync.asData?.value ?? const <Plant>[];
+    final unique = <String>{};
+    for (final p in plants) {
+      final name = p.categoryName;
+      if (name != null && name.trim().isNotEmpty) unique.add(name);
+    }
+    final categories = ['All', ...unique];
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       color: isDark ? Colors.black : Colors.white,
@@ -262,12 +277,15 @@ class _SpecialOffersPageState extends ConsumerState<SpecialOffersPage>
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: FilterChip(
-                label: Text(category),
+                key: ValueKey(category), // ← ADD THIS LINE
+                label: Text(category == 'All' ? 'all'.tr(language) : category),
                 selected: isSelected,
                 onSelected: (selected) {
                   ref.read(SpecialCategoryProvider.notifier).state = category;
                 },
-                backgroundColor: isDark ? Colors.black : Colors.white,
+                backgroundColor: isDark
+                    ? Colors.grey.shade900
+                    : Colors.white, // ← CHANGED from Colors.black
                 selectedColor: ColorConstants.secondaryColor,
                 labelStyle: TextStyle(
                   color: isSelected
@@ -297,10 +315,9 @@ class _SpecialOffersPageState extends ConsumerState<SpecialOffersPage>
       data: (plants) {
         final filteredPlants = selectedCategory == 'All'
             ? plants
-            : plants.where((plant) {
-                // add category logic later
-                return true;
-              }).toList();
+            : plants
+                  .where((plant) => plant.categoryName == selectedCategory)
+                  .toList();
 
         if (filteredPlants.isEmpty) {
           return SliverToBoxAdapter(
@@ -385,6 +402,6 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_StickyHeaderDelegate oldDelegate) {
-    return oldDelegate.height != height;
+    return oldDelegate.height != height || oldDelegate.child != child;
   }
 }

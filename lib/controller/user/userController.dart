@@ -19,7 +19,6 @@ class UserController {
     required BuildContext context,
   }) async {
     try {
-      print("registerUser");
       final body = json.encode({
         'query': userRegisterMutation,
         'variables': {
@@ -45,8 +44,15 @@ class UserController {
         if (responseData['errors'] != null) {
           throw Exception(responseData['errors'][0]['message']);
         }
-        final userResponse = responseData['data']['createUser'];
-        if (userResponse['status'] == true) {
+        final registerResponse = responseData['data']?['createCustomer'];
+        if (registerResponse == null) {
+          throw Exception('Empty response from server');
+        }
+        if (registerResponse['status'] == true) {
+          // Backwards-compat: expose customer under `user` key as well.
+          final customer = registerResponse['customer'];
+          final result = Map<String, dynamic>.from(registerResponse);
+          result['user'] = customer;
           if (context.mounted) {
             ToastHelper.showSuccess(
               context,
@@ -57,12 +63,16 @@ class UserController {
           if (context.mounted) {
             Navigator.pushNamed(context, '/login');
           }
-          return userResponse;
+          return result;
         } else {
           if (context.mounted) {
-            ToastHelper.showError(context, "Failed", userResponse['message']);
+            ToastHelper.showError(
+              context,
+              "Failed",
+              registerResponse['message'] ?? 'Register failed',
+            );
           }
-          throw Exception(userResponse['message']);
+          throw Exception(registerResponse['message']);
         }
       } else {
         if (context.mounted) {
@@ -104,19 +114,24 @@ class UserController {
       if (responseData['errors'] != null) {
         throw Exception(responseData['errors'][0]['message']);
       }
-      if (responseData['data']['userLogin']['status'] == true) {
+      final loginResponse = responseData['data']?['loginCustomer'];
+      if (loginResponse == null) {
+        throw Exception('Empty response from server');
+      }
+      if (loginResponse['status'] == true) {
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(
-          'accessToken',
-          responseData['data']['userLogin']['accessToken'],
-        );
-        await prefs.setString(
-          'refreshToken',
-          responseData['data']['userLogin']['refreshToken'],
-        );
-        await ref
-            .read(userProvider.notifier)
-            .saveUser(responseData['data']['userLogin']['user']);
+        if (loginResponse['accessToken'] != null) {
+          await prefs.setString('accessToken', loginResponse['accessToken']);
+        }
+        if (loginResponse['refreshToken'] != null) {
+          await prefs.setString('refreshToken', loginResponse['refreshToken']);
+        }
+        final customer = loginResponse['customer'];
+        if (customer != null) {
+          await ref
+              .read(userProvider.notifier)
+              .saveUser(Map<String, dynamic>.from(customer));
+        }
         if (context.mounted) {
           ToastHelper.showSuccess(
             context,
@@ -133,10 +148,12 @@ class UserController {
             );
           }
         });
-        return responseData['data']['userLogin'];
+        // Backwards-compat: expose customer under `user` key.
+        final result = Map<String, dynamic>.from(loginResponse);
+        result['user'] = customer;
+        return result;
       } else {
-        final errorMessage =
-            responseData['data']['userLogin']['message'] ?? 'Login failed';
+        final errorMessage = loginResponse['message'] ?? 'Login failed';
         if (context.mounted) {
           ToastHelper.showError(context, "Failed", errorMessage);
         }
@@ -170,7 +187,11 @@ class UserController {
       if (responseData['errors'] != null) {
         throw Exception(responseData['errors'][0]['message']);
       }
-      if (responseData['data']['requestOTP']['status'] == true) {
+      final otpResponse = responseData['data']?['requestOTP'];
+      if (otpResponse == null) {
+        throw Exception('Empty response from server');
+      }
+      if (otpResponse['status'] == true) {
         if (context.mounted) {
           ToastHelper.showSuccess(
             context,
@@ -178,11 +199,9 @@ class UserController {
             "User request OTP successfully",
           );
         }
-        return responseData['data']['requestOTP'];
+        return Map<String, dynamic>.from(otpResponse);
       } else {
-        final errorMessage =
-            responseData['data']['requestOTP']['message'] ??
-            'Request OTP failed';
+        final errorMessage = otpResponse['message'] ?? 'Request OTP failed';
         if (context.mounted) {
           ToastHelper.showError(context, "Failed", errorMessage);
         }
@@ -217,7 +236,11 @@ class UserController {
       if (responseData['errors'] != null) {
         throw Exception(responseData['errors'][0]['message']);
       }
-      if (responseData['data']['verifyOTP']['status'] == true) {
+      final verifyResponse = responseData['data']?['verifyOTP'];
+      if (verifyResponse == null) {
+        throw Exception('Empty response from server');
+      }
+      if (verifyResponse['status'] == true) {
         if (context.mounted) {
           ToastHelper.showSuccess(
             context,
@@ -225,10 +248,9 @@ class UserController {
             "User verify OTP successfully",
           );
         }
-        return responseData['data']['verifyOTP'];
+        return Map<String, dynamic>.from(verifyResponse);
       } else {
-        final errorMessage =
-            responseData['data']['verifyOTP']['message'] ?? 'Verify OTP failed';
+        final errorMessage = verifyResponse['message'] ?? 'Verify OTP failed';
         if (context.mounted) {
           ToastHelper.showError(context, "Failed", errorMessage);
         }
@@ -246,12 +268,19 @@ class UserController {
     required String newPassword,
     required String email,
     required BuildContext context,
+    String otp = '',
+    String? confirmPassword,
   }) async {
     try {
       final body = json.encode({
         'query': resetPasswordMutation,
         'variables': {
-          'data': {'email': email, 'password': newPassword},
+          'data': {
+            'email': email,
+            'otp': otp,
+            'password': newPassword,
+            'confirmPassword': confirmPassword ?? newPassword,
+          },
         },
       });
       final response = await http.post(
@@ -263,7 +292,11 @@ class UserController {
       if (responseData['errors'] != null) {
         throw Exception(responseData['errors'][0]['message']);
       }
-      if (responseData['data']['resetPassword']['status'] == true) {
+      final resetResponse = responseData['data']?['resetPassword'];
+      if (resetResponse == null) {
+        throw Exception('Empty response from server');
+      }
+      if (resetResponse['status'] == true) {
         if (context.mounted) {
           ToastHelper.showSuccess(
             context,
@@ -271,11 +304,10 @@ class UserController {
             "User reset password successfully",
           );
         }
-        return responseData['data']['resetPassword'];
+        return Map<String, dynamic>.from(resetResponse);
       } else {
         final errorMessage =
-            responseData['data']['resetPassword']['message'] ??
-            'Reset password failed';
+            resetResponse['message'] ?? 'Reset password failed';
         if (context.mounted) {
           ToastHelper.showError(context, "Failed", errorMessage);
         }

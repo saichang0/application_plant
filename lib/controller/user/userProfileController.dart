@@ -1,17 +1,10 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:plant_aplication/services/authStorage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final userProvider = AsyncNotifierProvider<UserNotifier, Map<String, dynamic>?>(
   UserNotifier.new,
 );
-
-final accessTokenProvider = FutureProvider<String?>((ref) async {
-  final token = await AuthStorage.getAccessToken();
-  if (token != null && token.trim().isEmpty) return null;
-  return token;
-});
 
 class UserNotifier extends AsyncNotifier<Map<String, dynamic>?> {
   static const _userKey = 'user';

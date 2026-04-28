@@ -64,7 +64,7 @@ class Address {
     final icon = provinceIcons[provinceName] ?? Icons.location_on;
 
     return Address(
-      id: json['_id']?.toString() ?? UniqueKey().toString(),
+      id: json['id']?.toString() ?? UniqueKey().toString(),
       province: json['province'] ?? '',
       district: json['district'] ?? '',
       village: json['village'] ?? '',

@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:plant_aplication/constant/colorConst.dart';
 import 'package:plant_aplication/constant/shipping.dart';
+import 'package:plant_aplication/controller/languageController.dart';
 import 'package:plant_aplication/page/cartPage/payment.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 
-final selectedShippingIndexProvider = StateProvider<int>((ref) => 1);
+final selectedShippingIndexProvider = StateProvider<int>((ref) => 0);
+final selectedShippingBranchProvider = StateProvider<String>((ref) => '');
 
 class ShippingPage extends ConsumerStatefulWidget {
   const ShippingPage({Key? key}) : super(key: key);
@@ -17,6 +20,7 @@ class ShippingPage extends ConsumerStatefulWidget {
 class _ShippingPageState extends ConsumerState<ShippingPage>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
+  late final TextEditingController _branchController;
 
   @override
   void initState() {
@@ -25,11 +29,15 @@ class _ShippingPageState extends ConsumerState<ShippingPage>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+    _branchController = TextEditingController(
+      text: ref.read(selectedShippingBranchProvider),
+    );
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _branchController.dispose();
     super.dispose();
   }
 
@@ -37,9 +45,12 @@ class _ShippingPageState extends ConsumerState<ShippingPage>
   Widget build(BuildContext context) {
     final selectedIndex = ref.watch(selectedShippingIndexProvider);
     final shippingOptions = ShippingConstants.shippingOptions;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final language = ref.watch(languageProvider);
+
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(color: Colors.white),
+        decoration: BoxDecoration(color: isDark ? Colors.black : Colors.white),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
@@ -54,22 +65,24 @@ class _ShippingPageState extends ConsumerState<ShippingPage>
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8F9FA),
+                          color: isDark
+                              ? Colors.grey[800]
+                              : const Color(0xFFF8F9FA),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back,
-                          color: Color(0xFF1A1A1A),
+                          color: isDark ? Colors.white : Color(0xFF1A1A1A),
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
-                    const Text(
-                      'Choose Shipping',
+                    Text(
+                      'choose_shipping'.tr(language),
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
+                        color: isDark ? Colors.white : Color(0xFF1A1A1A),
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -110,6 +123,42 @@ class _ShippingPageState extends ConsumerState<ShippingPage>
                   ),
                 ),
 
+                Text(
+                  'shipping_branch'.tr(language),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _branchController,
+                  onChanged: (value) {
+                    ref.read(selectedShippingBranchProvider.notifier).state =
+                        value.trim();
+                  },
+                  style: TextStyle(
+                    color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'enter_branch_name'.tr(language),
+                    filled: true,
+                    fillColor: isDark
+                        ? Colors.grey[900]
+                        : const Color(0xFFF8F9FA),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
                 TweenAnimationBuilder(
                   tween: Tween<double>(begin: 0, end: 1),
                   duration: const Duration(milliseconds: 600),
@@ -122,6 +171,19 @@ class _ShippingPageState extends ConsumerState<ShippingPage>
                   },
                   child: GestureDetector(
                     onTap: () {
+                      final branch = ref
+                          .read(selectedShippingBranchProvider)
+                          .trim();
+                      if (branch.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('branch_required'.tr(language)),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const PaymentPage()),
@@ -141,10 +203,10 @@ class _ShippingPageState extends ConsumerState<ShippingPage>
                           ),
                         ],
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
-                          'Apply',
-                          style: TextStyle(
+                          'apply'.tr(language),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -186,6 +248,8 @@ class _ShippingOptionCardState extends State<ShippingOptionCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: widget.onTap,
       onTapDown: (_) => setState(() => _isHovered = true),
@@ -196,11 +260,19 @@ class _ShippingOptionCardState extends State<ShippingOptionCard> {
         curve: Curves.easeOutCubic,
         transform: Matrix4.identity()..translate(0.0, _isHovered ? -4.0 : 0.0),
         decoration: BoxDecoration(
-          color: widget.isSelected ? const Color(0xFFE6FFF9) : Colors.white,
+          color: widget.isSelected
+              ? isDark
+                    ? Colors.grey[800]
+                    : const Color(0xFFE6FFF9)
+              : isDark
+              ? Colors.grey[900]
+              : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: widget.isSelected
                 ? const Color(0xFF00D9A3)
+                : isDark
+                ? Colors.grey[600]!
                 : const Color(0xFFE8E8E8),
             width: 2,
           ),
@@ -217,16 +289,15 @@ class _ShippingOptionCardState extends State<ShippingOptionCard> {
         padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            // Icon
+            // Logo
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF00D9A3), Color(0xFF00B589)],
-                ),
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE8E8E8), width: 1),
                 boxShadow: widget.isSelected
                     ? [
                         BoxShadow(
@@ -237,76 +308,51 @@ class _ShippingOptionCardState extends State<ShippingOptionCard> {
                       ]
                     : [],
               ),
-              child: Center(
-                child: Text(
-                  widget.option.icon,
-                  style: const TextStyle(fontSize: 28),
+              clipBehavior: Clip.antiAlias,
+              child: Image.asset(
+                widget.option.image,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.local_shipping,
+                  color: Color(0xFF00D9A3),
+                  size: 28,
                 ),
               ),
             ),
             const SizedBox(width: 16),
             // Details
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.option.name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A1A1A),
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.option.date,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF666666),
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
+              child: Text(
+                widget.option.name,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Color(0xFF1A1A1A),
+                  letterSpacing: -0.3,
+                ),
               ),
             ),
 
-            // Price and Radio
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  widget.option.price,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF00D9A3),
-                    letterSpacing: -0.5,
-                  ),
+            // Radio
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: widget.isSelected
+                    ? const Color(0xFF00D9A3)
+                    : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: widget.isSelected
+                      ? const Color(0xFF00D9A3)
+                      : const Color(0xFFD0D0D0),
+                  width: 2,
                 ),
-                const SizedBox(height: 8),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: widget.isSelected
-                        ? const Color(0xFF00D9A3)
-                        : Colors.transparent,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: widget.isSelected
-                          ? const Color(0xFF00D9A3)
-                          : const Color(0xFFD0D0D0),
-                      width: 2,
-                    ),
-                  ),
-                  child: widget.isSelected
-                      ? const Icon(Icons.check, size: 16, color: Colors.white)
-                      : null,
-                ),
-              ],
+              ),
+              child: widget.isSelected
+                  ? const Icon(Icons.check, size: 16, color: Colors.white)
+                  : null,
             ),
           ],
         ),

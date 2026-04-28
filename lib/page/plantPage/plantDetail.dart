@@ -2,11 +2,13 @@ import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:plant_aplication/controller/languageController.dart';
 import 'package:plant_aplication/controller/product/addItem.dart';
 import 'package:plant_aplication/controller/themeProvider.dart';
 import 'package:plant_aplication/model/plant.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plant_aplication/constant/colorConst.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 import 'package:plant_aplication/controller/product/productcontroller.dart';
 
 class PlantDetailNotifier extends StateNotifier<AsyncValue<Plant?>> {
@@ -188,6 +190,7 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
   Widget build(BuildContext context) {
     final plantAsync = ref.watch(plantDetailProvider(widget.plantId));
     final isDark = ref.watch(themeProvider);
+    final language = ref.watch(languageProvider);
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.white,
@@ -202,7 +205,7 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
               const Icon(Icons.error_outline, size: 60, color: Colors.red),
               const SizedBox(height: 16),
               Text(
-                'Error: ${error.toString()}',
+                '${'error'.tr(language)}: ${error.toString()}',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 14),
               ),
@@ -213,14 +216,14 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
                       .read(plantDetailProvider(widget.plantId).notifier)
                       .fetchPlant(widget.plantId, context);
                 },
-                child: const Text('Retry'),
+                child: Text('retry'.tr(language)),
               ),
             ],
           ),
         ),
         data: (plant) {
           if (plant == null) {
-            return const Center(child: Text('Plant not found'));
+            return Center(child: Text('plant_not_found'.tr(language)));
           }
           final id = plant.id;
           final images = plant.images;
@@ -272,8 +275,9 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
                                   const SizedBox(height: 10),
                                   _buildRatingSection(plant, isDark),
                                   const SizedBox(height: 14),
+                                  const SizedBox(height: 14),
                                   Text(
-                                    'Description',
+                                    'description'.tr(language),
                                     style: TextStyle(
                                       fontSize: 18,
                                       color: isDark
@@ -413,6 +417,7 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
   }
 
   Widget _buildRatingSection(Plant plant, bool isDark) {
+    final language = ref.watch(languageProvider);
     return Row(
       children: [
         Container(
@@ -421,9 +426,9 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
             color: ColorConstants.buttonColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(6),
           ),
-          child: const Text(
-            '1258 Sold',
-            style: TextStyle(
+          child: Text(
+            '1258 ${'sold'.tr(language)}',
+            style: const TextStyle(
               color: ColorConstants.buttonColor,
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -443,7 +448,7 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
         ),
         const SizedBox(width: 8),
         Text(
-          '(${plant.reviewCount} reviews)',
+          '(${plant.reviewCount} ${'reviews'.tr(language)})',
           style: TextStyle(
             fontSize: 14,
             color: isDark ? Colors.white : Color(0xFF666666),
@@ -459,12 +464,13 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
     int quantity,
     bool isDark,
   ) {
+    final language = ref.watch(languageProvider);
     final canDecrease = quantity >= 2;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Quantity',
+          'quantity'.tr(language),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -535,6 +541,7 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
     String id,
     bool isDark,
   ) {
+    final language = ref.watch(languageProvider);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -554,7 +561,7 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Total price',
+                'total_price'.tr(language),
                 style: TextStyle(
                   fontSize: 12,
                   color: isDark ? Colors.white : Color(0xFF999999),
@@ -584,11 +591,14 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
                       quantity: quantity,
                       productId: id,
                     ),
-                // ToastHelper.showSuccess(
-                //   context,
-                //   "Success",
-                //   "$plantName added to cart!",
-                // ),
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Added to cart successfully'),
+                    backgroundColor: ColorConstants.buttonColor,
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 2),
+                  ),
+                ),
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: ColorConstants.buttonColor,
@@ -599,14 +609,17 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
                 ),
                 elevation: 0,
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.shopping_bag_outlined, size: 20),
-                  SizedBox(width: 8),
+                  const Icon(Icons.shopping_bag_outlined, size: 20),
+                  const SizedBox(width: 8),
                   Text(
-                    'Add to Cart',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    'add_to_cart'.tr(language),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),

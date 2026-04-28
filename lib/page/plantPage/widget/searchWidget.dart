@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plant_aplication/constant/colorConst.dart';
+import 'package:plant_aplication/controller/languageController.dart';
+import 'package:plant_aplication/until/appTranslate.dart';
 
-class SearchWidget extends StatelessWidget {
+class SearchWidget extends ConsumerWidget {
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onFilterPressed;
@@ -16,8 +19,9 @@ class SearchWidget extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final language = ref.watch(languageProvider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -38,7 +42,7 @@ class SearchWidget extends StatelessWidget {
           },
           textInputAction: TextInputAction.search,
           decoration: InputDecoration(
-            hintText: 'Search',
+            hintText: 'search'.tr(language),
             hintStyle: TextStyle(
               color: isDark ? Colors.white : Colors.grey[400],
             ),
