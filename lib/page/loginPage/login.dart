@@ -7,6 +7,7 @@ import 'package:plant_aplication/controller/languageController.dart';
 import 'package:plant_aplication/until/appTranslate.dart';
 import 'package:plant_aplication/controller/user/userController.dart';
 import 'package:plant_aplication/page/loginPage/otpverification.dart';
+import 'package:plant_aplication/services/authStorage.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -45,6 +46,13 @@ void _userLogin(BuildContext context, WidgetRef ref) {
   }
 
   if (isValid) {
+    // "Remember me": save the email to pre-fill next time, or forget it.
+    if (ref.read(rememberMeProvider)) {
+      AuthStorage.saveRememberedEmail(email);
+    } else {
+      AuthStorage.clearRememberedEmail();
+    }
+
     debugPrint('userData: email=$email, password=$password');
     UserController.loginUser(
       email: email,
@@ -56,6 +64,30 @@ void _userLogin(BuildContext context, WidgetRef ref) {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
+  final TextEditingController _emailController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreRememberedEmail();
+  }
+
+  /// Pre-fills the email field if the user previously checked "Remember me".
+  Future<void> _restoreRememberedEmail() async {
+    final savedEmail = await AuthStorage.getRememberedEmail();
+    if (savedEmail != null && savedEmail.isNotEmpty && mounted) {
+      _emailController.text = savedEmail;
+      ref.read(emailProvider.notifier).state = savedEmail;
+      ref.read(rememberMeProvider.notifier).state = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final rememberMe = ref.watch(rememberMeProvider);
@@ -95,6 +127,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     TextField(
+                      controller: _emailController,
                       onChanged: (value) {
                         ref.read(emailProvider.notifier).state = value;
                         if (emailError != null) {

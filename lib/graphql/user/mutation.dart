@@ -40,6 +40,25 @@ mutation LoginCustomer($data: CustomerLoginInput!) {
 }
 ''';
 
+const String updateCustomerMutation = r'''
+mutation UpdateCustomer($data: UpdateCustomerInput!) {
+  updateCustomer(data: $data) {
+    status
+    message
+    tap
+    customer {
+      id
+      firstName
+      lastName
+      phoneNumber
+      email
+      profileImageUrl
+      address
+    }
+  }
+}
+''';
+
 const String requestOTPMutation = r'''
 mutation RequestOTP($data: RequestOTPInput!) {
   requestOTP(data: $data) {

@@ -47,13 +47,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     bool isValid = true;
 
     if (firstName.isEmpty) {
-      ref.read(firstNameErrorProvider.notifier).state =
-          'this_field_is_required'.tr(language);
+      ref.read(firstNameErrorProvider.notifier).state = 'this_field_is_required'
+          .tr(language);
       isValid = false;
     }
 
     if (lastName.isEmpty) {
-      ref.read(lastNameErrorProvider.notifier).state = 'this_field_is_required'.tr(language);
+      ref.read(lastNameErrorProvider.notifier).state = 'this_field_is_required'
+          .tr(language);
       isValid = false;
     }
 
@@ -64,7 +65,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     }
 
     if (phone.isEmpty) {
-      ref.read(phoneErrorProvider.notifier).state = 'this_field_is_required'.tr(language);
+      ref.read(phoneErrorProvider.notifier).state = 'this_field_is_required'.tr(
+        language,
+      );
       isValid = false;
     }
 
@@ -130,7 +133,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.grey[300] : Colors.grey[400],
+                    color: isDark ? Colors.grey[300] : Colors.black87,
                   ),
                 ),
               ),

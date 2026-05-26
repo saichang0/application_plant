@@ -17,6 +17,7 @@ query MyOrders($status: String, $limit: Int, $offset: Int) {
       customerName
       note
       customerAddressId
+      confirmedAt
       updatedAt
       user {
         id
@@ -88,6 +89,7 @@ query MyOrder($id: ID!) {
       customerName
       note
       customerAddressId
+      confirmedAt
       updatedAt
       user {
         id

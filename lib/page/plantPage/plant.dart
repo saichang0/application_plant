@@ -283,7 +283,8 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
     final userName = user != null
         ? "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}".trim()
         : 'guest'.tr(language);
-    final userAvatar = user?['profileImage'];
+    final userAvatar = (user?['profileImageUrl'] ?? user?['profileImage'])
+        as String?;
 
     return SliverAppBar(
       expandedHeight: 140.0,

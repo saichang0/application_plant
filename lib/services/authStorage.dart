@@ -5,6 +5,7 @@ class AuthStorage {
   static const _accessTokenKey = 'accessToken';
   static const _refreshTokenKey = 'refreshToken';
   static const _userKey = 'user';
+  static const _rememberedEmailKey = 'rememberedEmail';
 
   static Future<void> saveAuthData({
     required String accessToken,
@@ -33,5 +34,23 @@ class AuthStorage {
     await prefs.remove(_accessTokenKey);
     await prefs.remove(_refreshTokenKey);
     await prefs.remove(_userKey);
+  }
+
+  /// Saves the email to pre-fill on the next login (the "Remember me" option).
+  static Future<void> saveRememberedEmail(String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_rememberedEmailKey, email);
+  }
+
+  /// Returns the previously remembered email, or null if "Remember me" was off.
+  static Future<String?> getRememberedEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_rememberedEmailKey);
+  }
+
+  /// Forgets the saved email when the user unchecks "Remember me".
+  static Future<void> clearRememberedEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_rememberedEmailKey);
   }
 }

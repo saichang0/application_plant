@@ -64,20 +64,20 @@ class _CartPageState extends ConsumerState<CartPage>
           ),
         ),
         automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.search,
-              color: isDark ? Colors.white : Colors.black,
-            ),
-            onPressed: () {
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(builder: (context) => PlantSearchPage()),
-              // );
-            },
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(
+        //       Icons.search,
+        //       color: isDark ? Colors.white : Colors.black,
+        //     ),
+        //     onPressed: () {
+        //       Navigator.push(
+        //         context,
+        //         MaterialPageRoute(builder: (context) => PlantSearchPage()),
+        //       );
+        //     },
+        //   ),
+        // ],
       ),
       body: cartItems.isEmpty
           ? _buildEmptyCart(isDark, language)

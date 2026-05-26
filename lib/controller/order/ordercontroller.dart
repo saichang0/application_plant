@@ -283,6 +283,7 @@ class CreateOrderController {
       ...detail,
       'status': sale['status'] ?? 'Processing',
       'saleDate': sale['saleDate'],
+      'confirmedAt': sale['confirmedAt'],
       'updatedAt': sale['updatedAt'],
       'orderId': sale['id'],
       'deliveries': sale['deliveries'] ?? const [],

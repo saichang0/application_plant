@@ -8,6 +8,8 @@ class OrderItem {
   final bool isCompleted;
   final DateTime? orderDate;
   final DateTime? completedAt;
+  final DateTime? shippedAt;
+  final DateTime? confirmedAt;
   final String productId;
   final String orderId;
   final int lineCount;
@@ -28,6 +30,8 @@ class OrderItem {
     required this.orderId,
     this.orderDate,
     this.completedAt,
+    this.shippedAt,
+    this.confirmedAt,
     this.lineCount = 1,
     this.deliveryStatus = '',
     this.deliveryService = '',
@@ -71,6 +75,12 @@ class OrderItem {
       // `updatedAt` is the moment the customer is told they can get the plant.
       completedAt: json['updatedAt'] != null
           ? DateTime.tryParse(json['updatedAt'].toString())
+          : null,
+      shippedAt: firstDelivery?['shippedAt'] != null
+          ? DateTime.tryParse(firstDelivery!['shippedAt'].toString())
+          : null,
+      confirmedAt: json['confirmedAt'] != null
+          ? DateTime.tryParse(json['confirmedAt'].toString())
           : null,
       lineCount: (json['lineCount'] is num)
           ? (json['lineCount'] as num).toInt()

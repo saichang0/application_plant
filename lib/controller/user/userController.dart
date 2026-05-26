@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -6,6 +7,7 @@ import 'package:plant_aplication/constant/apiConst.dart';
 import 'package:plant_aplication/controller/user/userProfileController.dart';
 import 'package:plant_aplication/graphql/user/mutation.dart';
 import 'package:plant_aplication/page/home.dart';
+import 'package:plant_aplication/services/authStorage.dart';
 import 'package:plant_aplication/until/toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -319,5 +321,78 @@ class UserController {
       }
       throw Exception('Failed to reset password: $e');
     }
+  }
+
+  /// Uploads [imageFile] to the Cloudinary `/upload` endpoint and returns the
+  /// resulting secure URL.
+  static Future<String> uploadImage(File imageFile) async {
+    final token = await AuthStorage.getAccessToken();
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse(ApiConstants.uploadUrl),
+    );
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.files.add(
+      await http.MultipartFile.fromPath('file', imageFile.path),
+    );
+    final streamed = await request.send();
+    final body = await streamed.stream.bytesToString();
+    if (streamed.statusCode != 200) {
+      throw Exception('Upload failed (${streamed.statusCode}): $body');
+    }
+    final decoded = json.decode(body) as Map<String, dynamic>;
+    final url = decoded['data']?['url'] as String?;
+    if (url == null || url.isEmpty) {
+      throw Exception('No URL returned from /upload');
+    }
+    return url;
+  }
+
+  /// Uploads a new profile picture, persists it on the customer via the
+  /// `updateCustomer` mutation, and returns the updated customer map.
+  static Future<Map<String, dynamic>> updateProfileImage({
+    required String customerId,
+    required File imageFile,
+  }) async {
+    final imageUrl = await uploadImage(imageFile);
+
+    final token = await AuthStorage.getAccessToken();
+    final body = json.encode({
+      'query': updateCustomerMutation,
+      'variables': {
+        'data': {
+          'id': customerId,
+          'data': {'profileImageUrl': imageUrl},
+        },
+      },
+    });
+
+    final response = await http.post(
+      Uri.parse(ApiConstants.graphQlUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+
+    final Map<String, dynamic> responseData = json.decode(response.body);
+    if (responseData['errors'] != null) {
+      throw Exception(responseData['errors'][0]['message']);
+    }
+    final result = responseData['data']?['updateCustomer'];
+    if (result == null) {
+      throw Exception('Empty response from server');
+    }
+    if (result['status'] != true) {
+      throw Exception(result['message'] ?? 'Update failed');
+    }
+    final customer = result['customer'];
+    if (customer == null) {
+      throw Exception('No customer returned');
+    }
+    return Map<String, dynamic>.from(customer);
   }
 }

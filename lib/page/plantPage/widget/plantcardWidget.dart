@@ -194,26 +194,26 @@ class _PlantCardState extends State<PlantCard> with TickerProviderStateMixin {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        ..._buildStars(widget.plant.rating),
-                        const Spacer(),
-                        Icon(
-                          Icons.remove_red_eye_outlined,
-                          color: isDark
-                              ? Colors.white70
-                              : ColorConstants.secondaryColor,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          widget.plant.viewsCount.toString(),
-                          style: TextStyle(
-                            color: isDark
-                                ? Colors.white70
-                                : ColorConstants.secondaryColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        // ..._buildStars(widget.plant.rating),
+                        // const Spacer(),
+                        // Icon(
+                        //   Icons.remove_red_eye_outlined,
+                        //   color: isDark
+                        //       ? Colors.white70
+                        //       : ColorConstants.secondaryColor,
+                        //   size: 14,
+                        // ),
+                        // const SizedBox(width: 4),
+                        // Text(
+                        //   widget.plant.viewsCount.toString(),
+                        //   style: TextStyle(
+                        //     color: isDark
+                        //         ? Colors.white70
+                        //         : ColorConstants.secondaryColor,
+                        //     fontSize: 12,
+                        //     fontWeight: FontWeight.w500,
+                        //   ),
+                        // ),
                       ],
                     ),
                     Text(

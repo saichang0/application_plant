@@ -186,13 +186,15 @@ class _SpecialOffersPageState extends ConsumerState<SpecialOffersPage>
         },
         child: CustomScrollView(
           slivers: [
-            _buildSliverAppBar(isDark),
+            _buildSliverAppBar(isDark, language),
             SpecialAsync.when(
               loading: () => const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (e, _) => SliverFillRemaining(
-                child: Center(child: Text('Error loading Special')),
+                child: Center(
+                  child: Text('error_loading_special'.tr(language)),
+                ),
               ),
               data: (_) => const SliverToBoxAdapter(child: SizedBox.shrink()),
             ),
@@ -206,14 +208,14 @@ class _SpecialOffersPageState extends ConsumerState<SpecialOffersPage>
               ),
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
             if (SpecialAsync is AsyncData)
-              _buildSpecialGrid(SpecialAsync, isDark),
+              _buildSpecialGrid(SpecialAsync, isDark, language),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSliverAppBar(bool isDark) {
+  Widget _buildSliverAppBar(bool isDark, String language) {
     return SliverAppBar(
       expandedHeight: 80.0,
       floating: false,
@@ -229,7 +231,7 @@ class _SpecialOffersPageState extends ConsumerState<SpecialOffersPage>
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
-        'My Special',
+        'my_special'.tr(language),
         style: TextStyle(
           color: isDark ? Colors.white : Colors.black,
           fontSize: 20,
@@ -304,13 +306,17 @@ class _SpecialOffersPageState extends ConsumerState<SpecialOffersPage>
     );
   }
 
-  Widget _buildSpecialGrid(AsyncValue<List<Plant>> SpecialAsync, bool isDark) {
+  Widget _buildSpecialGrid(
+    AsyncValue<List<Plant>> SpecialAsync,
+    bool isDark,
+    String language,
+  ) {
     final selectedCategory = ref.watch(SpecialCategoryProvider);
 
     return SpecialAsync.when(
       loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
       error: (e, _) => SliverToBoxAdapter(
-        child: Center(child: Text('Error loading Special')),
+        child: Center(child: Text('error_loading_special'.tr(language))),
       ),
       data: (plants) {
         final filteredPlants = selectedCategory == 'All'
@@ -335,7 +341,7 @@ class _SpecialOffersPageState extends ConsumerState<SpecialOffersPage>
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Your Special is empty',
+                      'special_empty'.tr(language),
                       style: TextStyle(
                         color: isDark ? Colors.white : Colors.grey[600],
                         fontSize: 18,

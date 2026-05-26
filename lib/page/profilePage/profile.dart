@@ -5,8 +5,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:plant_aplication/constant/colorConst.dart';
 import 'package:plant_aplication/controller/languageController.dart';
 import 'package:plant_aplication/controller/themeProvider.dart';
+import 'package:plant_aplication/controller/user/userController.dart';
 import 'package:plant_aplication/controller/user/userProfileController.dart';
+import 'package:plant_aplication/page/cartPage/address.dart';
 import 'package:plant_aplication/page/home.dart';
+import 'package:plant_aplication/page/plantPage/notification.dart';
 import 'package:plant_aplication/page/profilePage/editProfile.dart';
 import 'package:plant_aplication/page/profilePage/language.dart';
 import 'package:plant_aplication/services/authStorage.dart';
@@ -61,10 +64,38 @@ class ProfilePage extends ConsumerWidget {
       if (picked == null) return;
 
       final currentUser = ref.read(userProvider).value ?? {};
+      final customerId = currentUser['id']?.toString();
+      if (customerId == null || customerId.isEmpty) {
+        throw Exception('Missing user id');
+      }
+
+      // Show a brief uploading indicator.
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Uploading...')),
+        );
+      }
+
+      // Upload to Cloudinary + persist on the customer via updateCustomer.
+      final updatedCustomer = await UserController.updateProfileImage(
+        customerId: customerId,
+        imageFile: File(picked.path),
+      );
+
+      // Merge the server's customer data back into local storage.
       await ref.read(userProvider.notifier).saveUser({
         ...currentUser,
-        'profileImage': picked.path,
+        ...updatedCustomer,
       });
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile image updated'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -170,7 +201,10 @@ class ProfilePage extends ConsumerWidget {
         ? "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}".trim()
         : 'guest'.tr(language);
     final phone = user?['phoneNumber'] ?? '';
-    final profileImage = user?['profileImage'] as String?;
+    // Backend stores the picture under `profileImageUrl`; fall back to the
+    // legacy local `profileImage` key for not-yet-synced data.
+    final profileImage =
+        (user?['profileImageUrl'] ?? user?['profileImage']) as String?;
     final hasImage = profileImage != null && profileImage.isNotEmpty;
     final isRemote = hasImage && profileImage.startsWith('http');
 
@@ -274,14 +308,24 @@ class ProfilePage extends ConsumerWidget {
             icon: Icons.location_on_outlined,
             title: 'address'.tr(language),
             isDark: isDark,
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => AddressPage()),
+              );
+            },
           ),
           _buildDivider(isDark),
           _buildMenuItem(
             icon: Icons.notifications_outlined,
             title: 'notification'.tr(language),
             isDark: isDark,
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationPage()),
+              );
+            },
           ),
           // _buildDivider(isDark),
           // _buildMenuItem(

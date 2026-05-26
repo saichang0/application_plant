@@ -7,14 +7,6 @@ import 'package:plant_aplication/model/order.dart';
 import 'package:plant_aplication/page/ordersPage/order.dart';
 import 'package:plant_aplication/until/appTranslate.dart';
 
-/// 4-stage order tracker.
-///
-/// Stage is derived from the parent sale's status (and the delivery row's
-/// status as a tie-breaker between confirmed → shipping):
-///   0  pending      -> customer just placed the order
-///   1  confirmed    -> shop accepted the order
-///   2  shipping     -> shop dispatched / delivery in progress
-///   3  completed    -> customer confirmed receipt
 class TrackOrderPage extends ConsumerStatefulWidget {
   final OrderItem order;
 
@@ -39,10 +31,8 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
     final d = order.deliveryStatus.toLowerCase();
     if (s == 'completed') return 3;
     if (s == 'cancelled' || s == 'canceled') return -1;
-    if (s == 'shipping' ||
-        s == 'shipped' ||
-        d == 'shipping' ||
-        d == 'shipped') return 2;
+    if (s == 'shipping' || s == 'shipped' || d == 'shipping' || d == 'shipped')
+      return 2;
     if (s == 'confirmed') return 1;
     return 0;
   }
@@ -65,7 +55,10 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
         ? 'confirm_received_done'.tr(lang)
         : (result['message']?.toString() ?? 'Error');
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: ok ? Colors.green : Colors.red),
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: ok ? Colors.green : Colors.red,
+      ),
     );
     if (ok) {
       ref.invalidate(ordersProvider);
@@ -105,7 +98,10 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
         backgroundColor: isDark ? Colors.black : Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? Colors.white : Colors.black,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -135,7 +131,9 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton.icon(
-                    onPressed: _confirming ? null : () => _onConfirmReceived(lang),
+                    onPressed: _confirming
+                        ? null
+                        : () => _onConfirmReceived(lang),
                     icon: _confirming
                         ? const SizedBox(
                             width: 18,
@@ -145,7 +143,10 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
                               color: Colors.white,
                             ),
                           )
-                        : const Icon(Icons.check_circle_outline, color: Colors.white),
+                        : const Icon(
+                            Icons.check_circle_outline,
+                            color: Colors.white,
+                          ),
                     label: Text(
                       'confirm_received'.tr(lang),
                       style: const TextStyle(
@@ -280,8 +281,7 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
             children: [
               for (int i = 0; i < steps.length; i++) ...[
                 _buildTimelineIcon(steps[i].$1, stage >= i, steps[i].$2),
-                if (i != steps.length - 1)
-                  _buildTimelineDivider(stage > i),
+                if (i != steps.length - 1) _buildTimelineDivider(stage > i),
               ],
             ],
           ),
@@ -349,23 +349,26 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
     final entries = <Map<String, dynamic>>[
       {
         'title': 'track_step_placed'.tr(lang),
-        'subtitle': _formatDate(_order.orderDate),
+        'subtitle': '',
+        'time': _formatDate(_order.orderDate),
         'reached': stage >= 0,
       },
       {
         'title': 'track_step_confirmed'.tr(lang),
         'subtitle': stage >= 1 ? 'stage_confirmed_msg'.tr(lang) : '',
+        'time': stage >= 1 ? _formatDate(_order.confirmedAt) : '',
         'reached': stage >= 1,
       },
       {
         'title': 'track_step_shipping'.tr(lang),
         'subtitle': _shippingSubtitle(lang, stage),
+        'time': stage >= 2 ? _formatDate(_order.shippedAt) : '',
         'reached': stage >= 2,
       },
       {
         'title': 'track_step_completed'.tr(lang),
-        'subtitle':
-            stage >= 3 ? _formatDate(_order.completedAt) : '',
+        'subtitle': '',
+        'time': stage >= 3 ? _formatDate(_order.completedAt) : '',
         'reached': stage >= 3,
       },
     ];
@@ -393,6 +396,7 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
             _buildStatusRow(
               entries[i]['title'].toString().replaceAll('\n', ' '),
               entries[i]['subtitle'].toString(),
+              entries[i]['time'].toString(),
               entries[i]['reached'] as bool,
               i == entries.length - 1,
               isDark,
@@ -426,6 +430,7 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
   Widget _buildStatusRow(
     String title,
     String subtitle,
+    String time,
     bool reached,
     bool isLast,
     bool isDark,
@@ -440,7 +445,9 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
                 width: 22,
                 height: 22,
                 decoration: BoxDecoration(
-                  color: reached ? ColorConstants.primaryColor : Colors.grey[300],
+                  color: reached
+                      ? ColorConstants.primaryColor
+                      : Colors.grey[300],
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -467,15 +474,32 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: reached
-                          ? (isDark ? Colors.white : Colors.black87)
-                          : Colors.grey,
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: reached
+                                ? (isDark ? Colors.white : Colors.black87)
+                                : Colors.grey,
+                          ),
+                        ),
+                      ),
+                      if (time.isNotEmpty)
+                        Text(
+                          time,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: reached
+                                ? (isDark ? Colors.grey[300] : Colors.grey[700])
+                                : Colors.grey,
+                          ),
+                        ),
+                    ],
                   ),
                   if (subtitle.isNotEmpty) ...[
                     const SizedBox(height: 4),

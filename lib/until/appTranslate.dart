@@ -67,6 +67,15 @@ class AppTranslations {
     'plant_type': {'en': 'Plant Type', 'lo': 'ປະເພດພືດ'},
     'most_popular': {'en': 'Most Popular', 'lo': 'ນິຍົມທີ່ສຸດ'},
     'special_offers': {'en': 'Special Offers', 'lo': 'ຂໍ້ສະເໜີພິເສດ'},
+    'my_special': {'en': 'My Special', 'lo': 'ພິເສດຂອງຂ້ອຍ'},
+    'error_loading_special': {
+      'en': 'Error loading Special',
+      'lo': 'ໂຫຼດຂໍ້ສະເໜີພິເສດບໍ່ສຳເລັດ',
+    },
+    'special_empty': {
+      'en': 'Your Special is empty',
+      'lo': 'ບໍ່ມີຂໍ້ສະເໜີພິເສດ',
+    },
     'see_all': {'en': 'See All', 'lo': 'ເບິ່ງທັງໝົດ'},
     'unable_to_load_special_offers': {
       'en': 'Unable to load special offers',
@@ -460,6 +469,54 @@ class AppTranslations {
       'lo': 'ສົ່ງການໃຫ້ຄະແນນສຳເລັດ',
     },
     'order_status': {'en': 'Order Status', 'lo': 'ສະຖານະອໍເດີ'},
+    'notifications': {'en': 'Notifications', 'lo': 'ການແຈ້ງເຕືອນ'},
+    'notif_empty': {
+      'en': 'No notifications yet',
+      'lo': 'ຍັງບໍ່ມີການແຈ້ງເຕືອນ',
+    },
+    'mark_all_read': {
+      'en': 'Mark all as read',
+      'lo': 'ໝາຍວ່າອ່ານທັງໝົດ',
+    },
+    'notif_today': {'en': 'Today', 'lo': 'ມື້ນີ້'},
+    'notif_yesterday': {'en': 'Yesterday', 'lo': 'ມື້ວານ'},
+    'notif_placed_title': {'en': 'Order placed', 'lo': 'ສັ່ງອໍເດີແລ້ວ'},
+    'notif_placed_sub': {
+      'en': 'Waiting for the shop to confirm your order',
+      'lo': 'ກຳລັງລໍຖ້າຮ້ານຢືນຢັນອໍເດີຂອງທ່ານ',
+    },
+    'notif_confirmed_title': {
+      'en': 'Order confirmed',
+      'lo': 'ຮ້ານຢືນຢັນອໍເດີ',
+    },
+    'notif_confirmed_sub': {
+      'en': 'The shop confirmed your order',
+      'lo': 'ຮ້ານໄດ້ຢືນຢັນອໍເດີຂອງທ່ານແລ້ວ',
+    },
+    'notif_shipping_title': {
+      'en': 'Order on the way',
+      'lo': 'ອໍເດີກຳລັງສົ່ງ',
+    },
+    'notif_shipping_sub': {
+      'en': 'The shop is delivering your plants',
+      'lo': 'ຮ້ານກຳລັງຈັດສົ່ງພືດຂອງທ່ານ',
+    },
+    'notif_completed_title': {
+      'en': 'Order completed',
+      'lo': 'ອໍເດີສຳເລັດ',
+    },
+    'notif_completed_sub': {
+      'en': 'You confirmed receiving your plants',
+      'lo': 'ທ່ານໄດ້ຢືນຢັນຮັບພືດແລ້ວ',
+    },
+    'notif_cancelled_title': {
+      'en': 'Order cancelled',
+      'lo': 'ອໍເດີຖືກຍົກເລີກ',
+    },
+    'notif_cancelled_sub': {
+      'en': 'This order was cancelled',
+      'lo': 'ອໍເດີນີ້ຖືກຍົກເລີກ',
+    },
     'track_order': {'en': 'Track Order', 'lo': 'ຕິດຕາມອໍເດີ'},
     'track_step_placed': {'en': 'Order\nPlaced', 'lo': 'ສັ່ງ\nແລ້ວ'},
     'track_step_confirmed': {'en': 'Shop\nConfirmed', 'lo': 'ຮ້ານ\nຢືນຢັນ'},

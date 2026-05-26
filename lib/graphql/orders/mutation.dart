@@ -16,6 +16,7 @@ mutation PlaceOrder($input: PlaceOrderInput!) {
       customerName
       note
       customerAddressId
+      confirmedAt
       updatedAt
       saleDetails {
         id
