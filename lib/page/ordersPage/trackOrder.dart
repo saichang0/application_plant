@@ -74,6 +74,7 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
           isCompleted: true,
           productId: _order.productId,
           orderId: _order.orderId,
+          orderCode: _order.orderCode,
           orderDate: _order.orderDate,
           completedAt: DateTime.now(),
           lineCount: _order.lineCount,
@@ -104,13 +105,27 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'track_order'.tr(lang),
-          style: TextStyle(
-            color: isDark ? Colors.white : Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'track_order'.tr(lang),
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (_order.orderCode.isNotEmpty)
+              Text(
+                _order.orderCode,
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : Colors.grey[600],
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+          ],
         ),
       ),
       body: SingleChildScrollView(

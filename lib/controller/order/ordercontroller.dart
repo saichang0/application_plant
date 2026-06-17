@@ -286,6 +286,7 @@ class CreateOrderController {
       'confirmedAt': sale['confirmedAt'],
       'updatedAt': sale['updatedAt'],
       'orderId': sale['id'],
+      'orderCode': sale['code'] ?? '',
       'deliveries': sale['deliveries'] ?? const [],
     };
   }

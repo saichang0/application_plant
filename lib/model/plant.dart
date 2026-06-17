@@ -8,7 +8,9 @@ class Plant {
   final bool isFavorite;
   final String description;
   final String? reviewCount;
+  final String? ownerId;
   final String? shopName;
+  final String? bankAccountImageUrl;
   final String? categoryId;
   final String? categoryName;
   final int viewsCount;
@@ -23,7 +25,9 @@ class Plant {
     required this.isFavorite,
     required this.description,
     this.reviewCount,
+    this.ownerId,
     this.shopName,
+    this.bankAccountImageUrl,
     this.categoryId,
     this.categoryName,
     this.viewsCount = 0,
@@ -32,8 +36,14 @@ class Plant {
   factory Plant.fromGraphQL(Map<String, dynamic> json) {
     final imageUrl = (json['imageUrl'] ?? '').toString();
     final owner = json['owner'];
+    final ownerId = owner is Map<String, dynamic>
+        ? owner['id']?.toString()
+        : null;
     final shopName = owner is Map<String, dynamic>
         ? owner['shopName']?.toString()
+        : null;
+    final bankAccountImageUrl = owner is Map<String, dynamic>
+        ? owner['bankAccountImageUrl']?.toString()
         : null;
     final category = json['category'];
     final categoryId = category is Map<String, dynamic>
@@ -88,7 +98,9 @@ class Plant {
       isFavorite: json['isFavorite'] ?? false,
       description: json['description'] ?? '',
       reviewCount: (json['reviewCount']?.toString()) ?? reviewCount.toString(),
+      ownerId: ownerId,
       shopName: shopName,
+      bankAccountImageUrl: bankAccountImageUrl,
       categoryId: categoryId,
       categoryName: categoryName,
       viewsCount: viewsCount,
@@ -106,7 +118,9 @@ class Plant {
       isFavorite: isFavorite ?? this.isFavorite,
       description: description,
       reviewCount: reviewCount,
+      ownerId: ownerId,
       shopName: shopName,
+      bankAccountImageUrl: bankAccountImageUrl,
       categoryId: categoryId,
       categoryName: categoryName,
       viewsCount: viewsCount,

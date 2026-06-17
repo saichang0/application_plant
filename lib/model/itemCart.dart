@@ -4,6 +4,10 @@ class CartItem {
   final String image;
   final double price;
   final int quantity;
+  // Shop owner whose bank accounts should be shown at checkout.
+  final String? ownerId;
+  // Legacy single-bank QR (kept as a fallback).
+  final String? bankAccountImageUrl;
 
   CartItem({
     required this.id,
@@ -11,6 +15,8 @@ class CartItem {
     required this.image,
     required this.price,
     required this.quantity,
+    this.ownerId,
+    this.bankAccountImageUrl,
   });
 
   CartItem copyWith({
@@ -19,6 +25,8 @@ class CartItem {
     String? image,
     double? price,
     int? quantity,
+    String? ownerId,
+    String? bankAccountImageUrl,
   }) {
     return CartItem(
       id: id ?? this.id,
@@ -26,6 +34,8 @@ class CartItem {
       image: image ?? this.image,
       price: price ?? this.price,
       quantity: quantity ?? this.quantity,
+      ownerId: ownerId ?? this.ownerId,
+      bankAccountImageUrl: bankAccountImageUrl ?? this.bankAccountImageUrl,
     );
   }
 }

@@ -321,6 +321,8 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
                       plant.price,
                       id,
                       isDark,
+                      plant.bankAccountImageUrl,
+                      plant.ownerId,
                     ),
                   ],
                 ),
@@ -540,6 +542,8 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
     double price,
     String id,
     bool isDark,
+    String? bankImageUrl,
+    String? ownerId,
   ) {
     final language = ref.watch(languageProvider);
     return Container(
@@ -590,6 +594,8 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
                       price: price,
                       quantity: quantity,
                       productId: id,
+                      ownerId: ownerId,
+                      bankAccountImageUrl: bankImageUrl,
                     ),
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

@@ -14,6 +14,7 @@ import 'package:plant_aplication/constant/shipping.dart';
 import 'package:plant_aplication/controller/languageController.dart';
 import 'package:plant_aplication/controller/order/ordercontroller.dart';
 import 'package:plant_aplication/controller/product/addItem.dart';
+import 'package:plant_aplication/graphql/bank/query.dart';
 import 'package:plant_aplication/until/appTranslate.dart';
 import 'package:plant_aplication/model/address.dart';
 import 'package:plant_aplication/page/cartPage/shipping.dart';
@@ -23,6 +24,52 @@ import 'package:flutter/services.dart';
 
 final selectedPaymentIndexProvider = StateProvider<int?>((ref) => 0);
 final uploadedPaymentProofProvider = StateProvider<File?>((ref) => null);
+
+/// A bank account fetched from the shop's `shopBankAccounts` query.
+class ShopBank {
+  final String id;
+  final String bankName;
+  final String qrImageUrl;
+  ShopBank({required this.id, required this.bankName, required this.qrImageUrl});
+
+  factory ShopBank.fromJson(Map<String, dynamic> json) => ShopBank(
+        id: (json['id'] ?? '').toString(),
+        bankName: (json['bankName'] ?? '').toString(),
+        qrImageUrl: (json['qrImageUrl'] ?? '').toString(),
+      );
+}
+
+/// Loads the shop owner's bank accounts for the current cart. Returns an empty
+/// list if the cart has no items or no owner id (then the UI falls back to
+/// the hardcoded payment methods).
+final shopBanksProvider = FutureProvider<List<ShopBank>>((ref) async {
+  final cart = ref.watch(cartProvider);
+  if (cart.isEmpty) return const [];
+  final ownerId = cart.first.ownerId;
+  if (ownerId == null || ownerId.isEmpty) return const [];
+
+  final token = await AuthStorage.getAccessToken();
+  final response = await http.post(
+    Uri.parse(ApiConstants.graphQlUrl),
+    headers: {
+      'Content-Type': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode({
+      'query': ShopBankAccountsQuery,
+      'variables': {'userId': ownerId},
+    }),
+  );
+
+  if (response.statusCode != 200) return const [];
+  final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+  final list = decoded['data']?['shopBankAccounts']?['data'];
+  if (list is! List) return const [];
+  return list
+      .whereType<Map>()
+      .map((m) => ShopBank.fromJson(Map<String, dynamic>.from(m)))
+      .toList();
+});
 
 class PaymentPage extends ConsumerStatefulWidget {
   const PaymentPage({Key? key}) : super(key: key);
@@ -51,9 +98,37 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
     super.dispose();
   }
 
-  // Show QR Code Dialog
-  void _showQRCodeDialog(BuildContext context) {
+  Widget _qrFallback(String language) {
+    return Container(
+      width: 280,
+      height: 280,
+      color: Colors.grey[200],
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.qr_code, size: 64, color: Color(0xFF00D9A3)),
+          const SizedBox(height: 8),
+          Text('qr_image_not_available'.tr(language)),
+        ],
+      ),
+    );
+  }
+
+  // Show QR Code Dialog. [bankUrl] is the QR for the bank the customer just
+  // tapped; falls back to whatever was attached to the cart, then to the
+  // bundled asset placeholder.
+  void _showQRCodeDialog(BuildContext context, {String? bankUrl}) {
     final language = ref.read(languageProvider);
+    if (bankUrl == null || bankUrl.isEmpty) {
+      final cart = ref.read(cartProvider);
+      bankUrl = cart
+          .map((c) => c.bankAccountImageUrl)
+          .firstWhere(
+            (u) => u != null && u.isNotEmpty,
+            orElse: () => null,
+          );
+    }
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -91,35 +166,21 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                 ),
                 const SizedBox(height: 20),
 
-                // QR Code Image
+                // QR Code Image — pulled from the shop owner's
+                // `bankAccountImageUrl`. Falls back to the bundled asset only
+                // when the shop has not uploaded a bank QR yet.
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    'assets/images/Qrcode.jpg',
-                    width: 280,
-                    height: 280,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 280,
-                        height: 280,
-                        color: Colors.grey[200],
-                        alignment: Alignment.center,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.qr_code,
-                              size: 64,
-                              color: Color(0xFF00D9A3),
-                            ),
-                            const SizedBox(height: 8),
-                            Text('qr_image_not_available'.tr(language)),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                  child: (bankUrl != null && bankUrl.isNotEmpty)
+                      ? Image.network(
+                          bankUrl,
+                          width: 280,
+                          height: 280,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _qrFallback(language),
+                        )
+                      : _qrFallback(language),
                 ),
                 const SizedBox(height: 20),
 
@@ -408,7 +469,20 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
   Widget build(BuildContext context) {
     final selectedIndex = ref.watch(selectedPaymentIndexProvider);
     final uploadedProof = ref.watch(uploadedPaymentProofProvider);
-    final paymentMethods = PaymentMethodConstants.paymentMethods;
+    final shopBanksAsync = ref.watch(shopBanksProvider);
+    // Prefer the shop's actual registered banks. Only fall back to the
+    // hardcoded list if the shop has not registered any yet.
+    final shopBanks = shopBanksAsync.asData?.value ?? const <ShopBank>[];
+    final paymentMethods = shopBanks.isNotEmpty
+        ? shopBanks
+            .map((b) => PaymentMethod(
+                  name: b.bankName,
+                  backgroundColor: const Color(0xFFE8F4FF),
+                  icon: Icons.account_balance,
+                  iconColor: ColorConstants.primaryColor,
+                ))
+            .toList()
+        : PaymentMethodConstants.paymentMethods;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final language = ref.watch(languageProvider);
 
@@ -492,8 +566,12 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                       onTap: () {
                         ref.read(selectedPaymentIndexProvider.notifier).state =
                             index;
-                        // Show QR code dialog when payment method is selected
-                        _showQRCodeDialog(context);
+                        // If the shop has registered banks, show that bank's
+                        // QR. Otherwise the dialog falls back internally.
+                        final url = index < shopBanks.length
+                            ? shopBanks[index].qrImageUrl
+                            : null;
+                        _showQRCodeDialog(context, bankUrl: url);
                       },
                     ),
                   ),

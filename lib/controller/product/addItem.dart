@@ -13,19 +13,20 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
     required String image,
     required double price,
     required int quantity,
+    String? ownerId,
+    String? bankAccountImageUrl,
   }) {
-    // Check if item already exists in cart
     final existingIndex = state.indexWhere((item) => item.id == productId);
 
     if (existingIndex >= 0) {
-      // Update quantity if item exists
       final updatedCart = [...state];
       updatedCart[existingIndex] = updatedCart[existingIndex].copyWith(
         quantity: updatedCart[existingIndex].quantity + quantity,
+        ownerId: ownerId,
+        bankAccountImageUrl: bankAccountImageUrl,
       );
       state = updatedCart;
     } else {
-      // Add new item
       state = [
         ...state,
         CartItem(
@@ -34,6 +35,8 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
           image: image,
           price: price,
           quantity: quantity,
+          ownerId: ownerId,
+          bankAccountImageUrl: bankAccountImageUrl,
         ),
       ];
     }

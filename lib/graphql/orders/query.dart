@@ -7,6 +7,8 @@ query MyOrders($status: String, $limit: Int, $offset: Int) {
     total
     sales {
       id
+      code
+      source
       customerId
       userId
       saleDate
@@ -79,6 +81,8 @@ query MyOrder($id: ID!) {
     tap
     sale {
       id
+      code
+      source
       customerId
       userId
       saleDate

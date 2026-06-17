@@ -12,6 +12,7 @@ class OrderItem {
   final DateTime? confirmedAt;
   final String productId;
   final String orderId;
+  final String orderCode;
   final int lineCount;
   final String deliveryStatus;
   final String deliveryService;
@@ -28,6 +29,7 @@ class OrderItem {
     required this.isCompleted,
     required this.productId,
     required this.orderId,
+    this.orderCode = '',
     this.orderDate,
     this.completedAt,
     this.shippedAt,
@@ -66,6 +68,7 @@ class OrderItem {
       isCompleted: (json['status'] ?? '').toString().toLowerCase() == 'completed',
       productId: product != null ? (product['id'] ?? '').toString() : '',
       orderId: (json['orderId'] ?? '').toString(),
+      orderCode: (json['orderCode'] ?? json['code'] ?? '').toString(),
       orderDate: json['saleDate'] != null
           ? DateTime.tryParse(json['saleDate'].toString())
           : (json['createdAt'] != null

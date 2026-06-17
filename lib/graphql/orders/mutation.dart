@@ -6,6 +6,8 @@ mutation PlaceOrder($input: PlaceOrderInput!) {
     tap
     sale {
       id
+      code
+      source
       customerId
       userId
       saleDate
