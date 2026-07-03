@@ -268,6 +268,10 @@ class AppTranslations {
       'en': 'QR Code saved to: {path}',
       'lo': 'ບັນທຶກ QR Code ໄປທີ່: {path}',
     },
+    'qr_code_saved_to_gallery': {
+      'en': 'QR Code saved to your gallery',
+      'lo': 'ບັນທຶກ QR Code ໄປໃນຄັງຮູບແລ້ວ',
+    },
     'download_qr_code': {'en': 'Download QR Code', 'lo': 'ດາວໂຫຼດ QR Code'},
     'storage_permission_required': {
       'en': 'Storage permission is required to download',

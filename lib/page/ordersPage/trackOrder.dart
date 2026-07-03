@@ -31,7 +31,12 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
     final d = order.deliveryStatus.toLowerCase();
     if (s == 'completed') return 3;
     if (s == 'cancelled' || s == 'canceled') return -1;
-    if (s == 'shipping' || s == 'shipped' || d == 'shipping' || d == 'shipped')
+    if (s == 'shipping' ||
+        s == 'shipped' ||
+        s == 'delivered' ||
+        d == 'shipping' ||
+        d == 'shipped' ||
+        d == 'delivered')
       return 2;
     if (s == 'confirmed') return 1;
     return 0;
@@ -40,6 +45,15 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
   bool _canConfirm(OrderItem order) {
     final stage = _stageFor(order);
     return stage == 1 || stage == 2;
+  }
+
+  /// The confirm-received button is only enabled once the order has actually
+  /// been delivered. The "DELIVERED" value comes from the delivery record's
+  /// status (mapped to order.deliveryStatus); we also check order.status as a
+  /// fallback.
+  bool _isDelivered(OrderItem order) {
+    return order.deliveryStatus.toUpperCase() == 'DELIVERED' ||
+        order.status.toUpperCase() == 'DELIVERED';
   }
 
   Future<void> _onConfirmReceived(String lang) async {
@@ -146,7 +160,7 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton.icon(
-                    onPressed: _confirming
+                    onPressed: (_confirming || !_isDelivered(_order))
                         ? null
                         : () => _onConfirmReceived(lang),
                     icon: _confirming
@@ -172,6 +186,8 @@ class _TrackOrderPageState extends ConsumerState<TrackOrderPage> {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ColorConstants.primaryColor,
+                      disabledBackgroundColor: Colors.grey.shade400,
+                      disabledForegroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),

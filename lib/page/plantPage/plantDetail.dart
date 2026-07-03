@@ -10,6 +10,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plant_aplication/constant/colorConst.dart';
 import 'package:plant_aplication/until/appTranslate.dart';
 import 'package:plant_aplication/controller/product/productcontroller.dart';
+import 'package:plant_aplication/page/plantPage/plant.dart'
+    show favoriteProductsProvider, productsProvider;
+import 'package:plant_aplication/page/plantPage/wishlist.dart'
+    show wishlistProductsProvider;
+import 'package:plant_aplication/page/plantPage/popular.dart'
+    show PopularProductsProvider;
+import 'package:plant_aplication/page/plantPage/special.dart'
+    show SpecialProductsProvider;
 
 class PlantDetailNotifier extends StateNotifier<AsyncValue<Plant?>> {
   PlantDetailNotifier() : super(const AsyncValue.loading());
@@ -82,15 +90,6 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _favoriteController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        if (mounted) {
-          setState(() {
-            _isTogglingFavorite = false;
-          });
-        }
-      }
-    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
@@ -109,23 +108,54 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
     setState(() {
       _isTogglingFavorite = true;
     });
-    _favoriteController.forward(from: 0.0);
+    _favoriteController.forward(from: 0.0).then((_) {
+      if (!mounted) return;
+      setState(() {
+        _isTogglingFavorite = false;
+      });
+    });
+  }
+
+  /// Keep the shared list-page state in sync so heart icons on the plant cards
+  /// update in real time (no refresh) when the favorite is toggled here.
+  void _syncFavoriteToLists(bool isFavorite) {
+    ref
+        .read(favoriteProductsProvider.notifier)
+        .setFavorite(widget.plantId, isFavorite);
+    ref.read(productsProvider.notifier).updateFavorite(widget.plantId, isFavorite);
+    ref
+        .read(PopularProductsProvider.notifier)
+        .updateFavorite(widget.plantId, isFavorite);
+    ref
+        .read(SpecialProductsProvider.notifier)
+        .updateFavorite(widget.plantId, isFavorite);
+    ref
+        .read(wishlistProductsProvider.notifier)
+        .updateFavorite(widget.plantId, isFavorite);
   }
 
   Future<void> _handleFavoriteTap(bool currentFavoriteState) async {
-    if (_isTogglingFavorite) {
+    final newFavoriteState = !currentFavoriteState;
+
+    // Only the "add to favorite" animation can be in progress and block a
+    // repeat add. Removing must NEVER be blocked, otherwise tapping to unfavorite
+    // while the heart animation is still playing does nothing and the green stays.
+    if (newFavoriteState && _isTogglingFavorite) {
       return;
     }
-    // Optimistically update the UI
-    final newFavoriteState = !currentFavoriteState;
+
+    // Optimistically update the UI (detail page + shared list state)
     ref
         .read(plantDetailProvider(widget.plantId).notifier)
         .updateFavorite(newFavoriteState);
+    _syncFavoriteToLists(newFavoriteState);
 
-    // Play animation if adding to favorites
+    // Play animation if adding to favorites; otherwise cancel it immediately so
+    // the green filled heart disappears right away.
     if (newFavoriteState) {
       _playFavoriteAnimation();
     } else {
+      _favoriteController.reset();
       setState(() {
         _isTogglingFavorite = false;
       });
@@ -136,37 +166,75 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
         productId: widget.plantId,
         context: context,
       );
-      if (result['status'] == true) {
-        final data = result['data'];
-        final isFavorite = data != null && data['isFavorite'] == true;
 
-        // Update with server response
+      // ---- Debug logging: see exactly what the backend returns ----
+      debugPrint('❤️ TOGGLE WISHLIST ===============================');
+      debugPrint('❤️ tapped: current=$currentFavoriteState -> new=$newFavoriteState');
+      debugPrint('❤️ raw result: $result');
+      debugPrint('❤️ result["status"] = ${result['status']} (${result['status'].runtimeType})');
+      debugPrint('❤️ result["data"]   = ${result['data']} (${result['data'].runtimeType})');
+
+      final status = result['status'];
+      // Treat only an explicit error as failure. Backend `status` may be a
+      // String like "SUCCESS"/"ERROR", a number, or a bool — anything that is
+      // not clearly an error counts as success.
+      final isError =
+          status == 'ERROR' ||
+          status == false ||
+          status == 'false' ||
+          status == 'FAILED' ||
+          status == 'ERR';
+
+      debugPrint('❤️ isError = $isError');
+
+      if (!isError) {
+        // Prefer the server's reported isFavorite. If it isn't present, KEEP the
+        // optimistic value — never flip the heart back on a successful toggle.
+        final data = result['data'];
+        bool isFavorite;
+        if (data is Map && data['isFavorite'] != null) {
+          isFavorite = data['isFavorite'] == true;
+          debugPrint('❤️ using server isFavorite = $isFavorite');
+        } else {
+          isFavorite = newFavoriteState;
+          debugPrint('❤️ no server isFavorite, keeping optimistic = $isFavorite');
+        }
+
         ref
             .read(plantDetailProvider(widget.plantId).notifier)
             .updateFavorite(isFavorite);
+        _syncFavoriteToLists(isFavorite);
 
-        // If removing from favorites, stop animation immediately
+        // If it ended up not favorited, make sure the green animation is gone.
         if (!isFavorite) {
           _favoriteController.reset();
-          setState(() {
-            _isTogglingFavorite = false;
-          });
+          if (mounted) {
+            setState(() {
+              _isTogglingFavorite = false;
+            });
+          }
         }
       } else {
+        debugPrint('❤️ REVERTING to $currentFavoriteState because server returned an error');
         // Revert on failure
         ref
             .read(plantDetailProvider(widget.plantId).notifier)
             .updateFavorite(currentFavoriteState);
+        _syncFavoriteToLists(currentFavoriteState);
 
-        setState(() {
-          _isTogglingFavorite = false;
-        });
         _favoriteController.reset();
+        if (mounted) {
+          setState(() {
+            _isTogglingFavorite = false;
+          });
+        }
       }
     } catch (e) {
+      debugPrint('❤️ EXCEPTION in toggle: $e');
       ref
           .read(plantDetailProvider(widget.plantId).notifier)
           .updateFavorite(currentFavoriteState);
+      _syncFavoriteToLists(currentFavoriteState);
 
       setState(() {
         _isTogglingFavorite = false;
@@ -229,7 +297,10 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
           final images = plant.images;
           final quantity = ref.watch(plantQuantityProvider(widget.plantId));
           final totalPrice = plant.price * quantity;
-          final isFavorite = plant.isFavorite;
+          // Reflect the shared list state so the heart stays consistent with the
+          // plant cards (e.g. if it was favorited from the list before opening).
+          final favoriteIds = ref.watch(favoriteProductsProvider);
+          final isFavorite = favoriteIds.contains(id) || plant.isFavorite;
           final formattedPrice = NumberFormat(
             '#,###',
             'en_US',
@@ -367,7 +438,7 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
         width: 100,
         height: 100,
         alignment: Alignment.center,
-        child: _isTogglingFavorite && isFavorite
+        child: _isTogglingFavorite
             ? ColorFiltered(
                 colorFilter: const ColorFilter.mode(
                   ColorConstants.buttonColor,

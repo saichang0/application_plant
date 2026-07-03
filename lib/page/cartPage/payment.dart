@@ -21,6 +21,7 @@ import 'package:plant_aplication/page/cartPage/shipping.dart';
 import 'package:plant_aplication/until/toast.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
+import 'package:gallery_saver_plus/gallery_saver.dart';
 
 final selectedPaymentIndexProvider = StateProvider<int?>((ref) => 0);
 final uploadedPaymentProofProvider = StateProvider<File?>((ref) => null);
@@ -30,13 +31,17 @@ class ShopBank {
   final String id;
   final String bankName;
   final String qrImageUrl;
-  ShopBank({required this.id, required this.bankName, required this.qrImageUrl});
+  ShopBank({
+    required this.id,
+    required this.bankName,
+    required this.qrImageUrl,
+  });
 
   factory ShopBank.fromJson(Map<String, dynamic> json) => ShopBank(
-        id: (json['id'] ?? '').toString(),
-        bankName: (json['bankName'] ?? '').toString(),
-        qrImageUrl: (json['qrImageUrl'] ?? '').toString(),
-      );
+    id: (json['id'] ?? '').toString(),
+    bankName: (json['bankName'] ?? '').toString(),
+    qrImageUrl: (json['qrImageUrl'] ?? '').toString(),
+  );
 }
 
 /// Loads the shop owner's bank accounts for the current cart. Returns an empty
@@ -98,6 +103,25 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
     super.dispose();
   }
 
+  /// Maps a shop bank name (e.g. "BCEL", "JDB Bank", "ldb") to its logo asset.
+  /// Falls back to a generic bank icon (handled by the card) when unknown.
+  String? _bankLogoAsset(String bankName) {
+    final name = bankName.toLowerCase();
+    if (name.contains('bcel')) return 'assets/images/bcel.png';
+    if (name.contains('jdb')) return 'assets/images/jdb.png';
+    if (name.contains('ldb')) return 'assets/images/ldb.png';
+    return null;
+  }
+
+  /// Background tint behind each bank logo, matched to the bank.
+  Color _bankBackgroundColor(String bankName) {
+    final name = bankName.toLowerCase();
+    if (name.contains('bcel')) return const Color(0xFFE8F4FF);
+    if (name.contains('ldb')) return const Color(0xFFE8F0FE);
+    if (name.contains('jdb')) return const Color(0xFFF5F5F5);
+    return const Color(0xFFE8F4FF);
+  }
+
   Widget _qrFallback(String language) {
     return Container(
       width: 280,
@@ -115,19 +139,13 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
     );
   }
 
-  // Show QR Code Dialog. [bankUrl] is the QR for the bank the customer just
-  // tapped; falls back to whatever was attached to the cart, then to the
-  // bundled asset placeholder.
   void _showQRCodeDialog(BuildContext context, {String? bankUrl}) {
     final language = ref.read(languageProvider);
     if (bankUrl == null || bankUrl.isEmpty) {
       final cart = ref.read(cartProvider);
       bankUrl = cart
           .map((c) => c.bankAccountImageUrl)
-          .firstWhere(
-            (u) => u != null && u.isNotEmpty,
-            orElse: () => null,
-          );
+          .firstWhere((u) => u != null && u.isNotEmpty, orElse: () => null);
     }
     showDialog(
       context: context,
@@ -188,7 +206,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () => _downloadQRCode(context),
+                    onPressed: () => _downloadQRCode(context, bankUrl: bankUrl),
                     icon: const Icon(Icons.download, color: Colors.white),
                     label: Text(
                       'download_qr_code'.tr(language),
@@ -243,80 +261,65 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
     );
   }
 
-  // Download QR Code
-  Future<void> _downloadQRCode(BuildContext context) async {
+  // Download QR Code — saves the QR image currently shown in the dialog.
+  Future<void> _downloadQRCode(BuildContext context, {String? bankUrl}) async {
     final language = ref.read(languageProvider);
     try {
-      // Request storage permission
-      PermissionStatus status;
-      try {
-        status = await Permission.storage.request();
-      } on MissingPluginException catch (_) {
-        // Permission plugin not available (e.g., running in environment without plugins)
-        status = PermissionStatus.granted;
-      }
-
-      if (status.isDenied) {
+      // Get the bytes of the QR image being displayed. Prefer the shop's
+      // network QR (bankUrl); the dialog shows nothing else to save.
+      Uint8List bytes;
+      if (bankUrl != null && bankUrl.isNotEmpty) {
+        final response = await http.get(Uri.parse(bankUrl));
+        if (response.statusCode != 200) {
+          throw Exception('HTTP ${response.statusCode}');
+        }
+        bytes = response.bodyBytes;
+      } else {
+        // No QR uploaded by the shop — nothing to download.
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('storage_permission_required'.tr(language))),
+          SnackBar(
+            content: Text('qr_image_not_available'.tr(language)),
+            backgroundColor: Colors.red,
+          ),
         );
         return;
       }
 
-      // Get the directory for saving
-      Directory? directory;
-      if (Platform.isAndroid) {
-        directory = Directory('/storage/emulated/0/Download');
-        if (!await directory.exists()) {
-          directory = await getExternalStorageDirectory();
-        }
-      } else {
-        directory = await getApplicationDocumentsDirectory();
-      }
+      // Write to a temp file first, then hand it to the Gallery so it shows
+      // up in the phone's Photos/Gallery app where it's easy to find.
+      final Directory tempDir = await getTemporaryDirectory();
+      final String tempPath =
+          '${tempDir.path}/payment_qr_code_${bytes.length}.png';
+      await File(tempPath).writeAsBytes(bytes);
 
-      if (directory != null) {
-        // Copy the file. If the source file doesn't exist, try to copy the bundled asset.
-        final String path = '${directory.path}/payment_qr_code.png';
-        final File sourceFile = File(
-          '/mnt/user-data/uploads/1766845919097_image.png',
-        );
+      final bool? saved = await GallerySaver.saveImage(
+        tempPath,
+        albumName: 'Plant App',
+      );
 
-        if (await sourceFile.exists()) {
-          await sourceFile.copy(path);
-        } else {
-          try {
-            final ByteData data = await rootBundle.load(
-              'assets/images/6ed93576-4b5b-435b-afec-99cb2100fcb7.jpg',
-            );
-            final bytes = data.buffer.asUint8List();
-            await File(path).writeAsBytes(bytes);
-          } catch (e) {
-            print('e: $e');
-            Navigator.of(context).pop(); // Close dialog
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('qr_image_save_unavailable'.tr(language)),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
-        }
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close dialog
 
-        Navigator.of(context).pop(); // Close dialog
-
+      if (saved == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'qr_code_saved_to'.tr(language).replaceFirst('{path}', path),
-            ),
+            content: Text('qr_code_saved_to_gallery'.tr(language)),
             backgroundColor: const Color(0xFF00D9A3),
             behavior: SnackBarBehavior.floating,
           ),
         );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('qr_image_save_unavailable'.tr(language)),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
-      print('e: $e');
+      debugPrint('Download QR failed: $e');
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -474,14 +477,17 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
     // hardcoded list if the shop has not registered any yet.
     final shopBanks = shopBanksAsync.asData?.value ?? const <ShopBank>[];
     final paymentMethods = shopBanks.isNotEmpty
-        ? shopBanks
-            .map((b) => PaymentMethod(
-                  name: b.bankName,
-                  backgroundColor: const Color(0xFFE8F4FF),
-                  icon: Icons.account_balance,
-                  iconColor: ColorConstants.primaryColor,
-                ))
-            .toList()
+        ? shopBanks.map((b) {
+            final logo = _bankLogoAsset(b.bankName);
+            return PaymentMethod(
+              name: b.bankName,
+              backgroundColor: _bankBackgroundColor(b.bankName),
+              image: logo,
+              // Only used when the bank isn't BCEL/JDB/LDB (no logo).
+              icon: logo == null ? Icons.account_balance : null,
+              iconColor: logo == null ? ColorConstants.primaryColor : null,
+            );
+          }).toList()
         : PaymentMethodConstants.paymentMethods;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final language = ref.watch(languageProvider);

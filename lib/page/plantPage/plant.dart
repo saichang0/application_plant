@@ -107,40 +107,63 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
     expandedSearchFocus.unfocus();
   }
 
+  /// Push a favorite change to every provider that renders heart icons so all
+  /// pages (home lists, popular, special, wishlist) update in real time.
+  void _syncFavoriteEverywhere(String productId, bool isFavorite) {
+    ref
+        .read(favoriteProductsProvider.notifier)
+        .setFavorite(productId, isFavorite);
+    ref.read(productsProvider.notifier).updateFavorite(productId, isFavorite);
+    ref
+        .read(PopularProductsProvider.notifier)
+        .updateFavorite(productId, isFavorite);
+    ref
+        .read(SpecialProductsProvider.notifier)
+        .updateFavorite(productId, isFavorite);
+    ref
+        .read(wishlistProductsProvider.notifier)
+        .updateFavorite(productId, isFavorite);
+  }
+
   Future<void> _handleFavoriteToggle(
     BuildContext context,
     String productId,
   ) async {
-    ref
-        .read(favoriteProductsProvider.notifier)
-        .setFavorite(
-          productId,
-          !ref.read(favoriteProductsProvider).contains(productId),
-        );
+    final wasFavorite =
+        ref.read(favoriteProductsProvider).contains(productId);
+    final optimistic = !wasFavorite;
+
+    // Optimistic update across all pages.
+    _syncFavoriteEverywhere(productId, optimistic);
 
     try {
-      print("Toggling favorite for productId: $productId");
       final result = await ProductController.togglewishlist(
         productId: productId,
         context: context,
       );
-      print("Toggle Favorite Result: $result");
-      final isFavorite = result['data'] != null
-          ? result['data']['isFavorite'] == true
-          : false;
-      ref
-          .read(favoriteProductsProvider.notifier)
-          .setFavorite(productId, isFavorite);
 
-      ref.read(productsProvider.notifier).updateFavorite(productId, isFavorite);
+      final status = result['status'];
+      final isError =
+          status == 'ERROR' ||
+          status == false ||
+          status == 'false' ||
+          status == 'FAILED';
+
+      if (isError) {
+        // Revert to the previous state.
+        _syncFavoriteEverywhere(productId, wasFavorite);
+        return;
+      }
+
+      // Trust the server's value if present, otherwise keep the optimistic one.
+      final data = result['data'];
+      final bool isFavorite = data is Map && data['isFavorite'] != null
+          ? data['isFavorite'] == true
+          : optimistic;
+      _syncFavoriteEverywhere(productId, isFavorite);
     } catch (e) {
       print("Error toggling favorite: $e");
-      ref
-          .read(favoriteProductsProvider.notifier)
-          .setFavorite(
-            productId,
-            ref.read(favoriteProductsProvider).contains(productId),
-          );
+      _syncFavoriteEverywhere(productId, wasFavorite);
     }
   }
 
