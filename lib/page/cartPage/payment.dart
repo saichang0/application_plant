@@ -87,6 +87,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   final ImagePicker _picker = ImagePicker();
+  bool _isConfirmingPayment = false;
 
   @override
   void initState() {
@@ -708,7 +709,11 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                           ),
                         );
                       }
+                    : _isConfirmingPayment
+                    ? null
                     : () async {
+                        setState(() => _isConfirmingPayment = true);
+                        try {
                         final shippingIndex = ref.read(
                           selectedShippingIndexProvider,
                         );
@@ -849,6 +854,11 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                             ),
                           );
                         }
+                        } finally {
+                          if (mounted) {
+                            setState(() => _isConfirmingPayment = false);
+                          }
+                        }
                       },
                 child: Container(
                   width: double.infinity,
@@ -874,17 +884,28 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                         : [],
                   ),
                   child: Center(
-                    child: Text(
-                      uploadedProof != null
-                          ? 'confirm_payment'.tr(language)
-                          : 'upload_proof_to_continue'.tr(language),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+                    child: _isConfirmingPayment
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : Text(
+                            uploadedProof != null
+                                ? 'confirm_payment'.tr(language)
+                                : 'upload_proof_to_continue'.tr(language),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                   ),
                 ),
               ),

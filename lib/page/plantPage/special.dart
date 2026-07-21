@@ -325,35 +325,35 @@ class _SpecialOffersPageState extends ConsumerState<SpecialOffersPage>
                   .where((plant) => plant.categoryName == selectedCategory)
                   .toList();
 
-        if (filteredPlants.isEmpty) {
-          return SliverToBoxAdapter(
-            child: Container(
-              height: 400,
-              margin: const EdgeInsets.all(16),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.favorite_border,
-                      size: 80,
-                      color: isDark ? Colors.white : Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'special_empty'.tr(language),
-                      style: TextStyle(
-                        color: isDark ? Colors.white : Colors.grey[600],
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }
+        // if (filteredPlants.isEmpty) {
+        //   return SliverToBoxAdapter(
+        //     child: Container(
+        //       height: 400,
+        //       margin: const EdgeInsets.all(16),
+        //       child: Center(
+        //         child: Column(
+        //           mainAxisAlignment: MainAxisAlignment.center,
+        //           children: [
+        //             Icon(
+        //               Icons.favorite_border,
+        //               size: 80,
+        //               color: isDark ? Colors.white : Colors.grey[400],
+        //             ),
+        //             const SizedBox(height: 16),
+        //             Text(
+        //               'special_empty'.tr(language),
+        //               style: TextStyle(
+        //                 color: isDark ? Colors.white : Colors.grey[600],
+        //                 fontSize: 18,
+        //                 fontWeight: FontWeight.w600,
+        //               ),
+        //             ),
+        //           ],
+        //         ),
+        //       ),
+        //     ),
+        //   );
+        // }
 
         return SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),

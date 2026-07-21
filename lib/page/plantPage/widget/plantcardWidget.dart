@@ -141,37 +141,37 @@ class _PlantCardState extends State<PlantCard> with TickerProviderStateMixin {
                     },
                   ),
                 ),
-                Positioned(
-                  top: -10,
-                  right: -10,
-                  child: GestureDetector(
-                    onTap: _handleFavoriteTap,
-                    child: SizedBox(
-                      width: 80,
-                      height: 80,
-                      child: _isAnimating
-                          ? ColorFiltered(
-                              colorFilter: const ColorFilter.mode(
-                                ColorConstants.buttonColor,
-                                BlendMode.srcATop,
-                              ),
-                              child: Lottie.asset(
-                                'assets/animations/Love Animation with Particle.json',
-                                controller: _controller,
-                                fit: BoxFit.contain,
-                                repeat: false,
-                              ),
-                            )
-                          : Icon(
-                              widget.plant.isFavorite
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color: ColorConstants.buttonColor,
-                              size: 24,
-                            ),
-                    ),
-                  ),
-                ),
+                // Positioned(
+                //   top: -10,
+                //   right: -10,
+                //   child: GestureDetector(
+                //     onTap: _handleFavoriteTap,
+                //     child: SizedBox(
+                //       width: 80,
+                //       height: 80,
+                //       child: _isAnimating
+                //           ? ColorFiltered(
+                //               colorFilter: const ColorFilter.mode(
+                //                 ColorConstants.buttonColor,
+                //                 BlendMode.srcATop,
+                //               ),
+                //               child: Lottie.asset(
+                //                 'assets/animations/Love Animation with Particle.json',
+                //                 controller: _controller,
+                //                 fit: BoxFit.contain,
+                //                 repeat: false,
+                //               ),
+                //             )
+                //           : Icon(
+                //               widget.plant.isFavorite
+                //                   ? Icons.favorite
+                //                   : Icons.favorite_border,
+                //               color: ColorConstants.buttonColor,
+                //               size: 24,
+                //             ),
+                //     ),
+                //   ),
+                // ),
               ],
             ),
             Expanded(

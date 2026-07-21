@@ -122,7 +122,9 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
     ref
         .read(favoriteProductsProvider.notifier)
         .setFavorite(widget.plantId, isFavorite);
-    ref.read(productsProvider.notifier).updateFavorite(widget.plantId, isFavorite);
+    ref
+        .read(productsProvider.notifier)
+        .updateFavorite(widget.plantId, isFavorite);
     ref
         .read(PopularProductsProvider.notifier)
         .updateFavorite(widget.plantId, isFavorite);
@@ -169,10 +171,16 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
 
       // ---- Debug logging: see exactly what the backend returns ----
       debugPrint('❤️ TOGGLE WISHLIST ===============================');
-      debugPrint('❤️ tapped: current=$currentFavoriteState -> new=$newFavoriteState');
+      debugPrint(
+        '❤️ tapped: current=$currentFavoriteState -> new=$newFavoriteState',
+      );
       debugPrint('❤️ raw result: $result');
-      debugPrint('❤️ result["status"] = ${result['status']} (${result['status'].runtimeType})');
-      debugPrint('❤️ result["data"]   = ${result['data']} (${result['data'].runtimeType})');
+      debugPrint(
+        '❤️ result["status"] = ${result['status']} (${result['status'].runtimeType})',
+      );
+      debugPrint(
+        '❤️ result["data"]   = ${result['data']} (${result['data'].runtimeType})',
+      );
 
       final status = result['status'];
       // Treat only an explicit error as failure. Backend `status` may be a
@@ -197,7 +205,9 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
           debugPrint('❤️ using server isFavorite = $isFavorite');
         } else {
           isFavorite = newFavoriteState;
-          debugPrint('❤️ no server isFavorite, keeping optimistic = $isFavorite');
+          debugPrint(
+            '❤️ no server isFavorite, keeping optimistic = $isFavorite',
+          );
         }
 
         ref
@@ -215,7 +225,9 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
           }
         }
       } else {
-        debugPrint('❤️ REVERTING to $currentFavoriteState because server returned an error');
+        debugPrint(
+          '❤️ REVERTING to $currentFavoriteState because server returned an error',
+        );
         // Revert on failure
         ref
             .read(plantDetailProvider(widget.plantId).notifier)
@@ -340,7 +352,7 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
                                           ),
                                         ),
                                       ),
-                                      _buildFavoriteButton(isFavorite),
+                                      // _buildFavoriteButton(isFavorite),
                                     ],
                                   ),
                                   const SizedBox(height: 10),
@@ -431,36 +443,36 @@ class _PlantDetailPageState extends ConsumerState<PlantDetailPage>
     );
   }
 
-  Widget _buildFavoriteButton(bool isFavorite) {
-    return GestureDetector(
-      onTap: () => _handleFavoriteTap(isFavorite),
-      child: Container(
-        width: 100,
-        height: 100,
-        alignment: Alignment.center,
-        child: _isTogglingFavorite
-            ? ColorFiltered(
-                colorFilter: const ColorFilter.mode(
-                  ColorConstants.buttonColor,
-                  BlendMode.srcATop,
-                ),
-                child: Lottie.asset(
-                  'assets/animations/Love Animation with Particle.json',
-                  controller: _favoriteController,
-                  width: 100,
-                  height: 100,
-                  fit: BoxFit.contain,
-                  repeat: false,
-                ),
-              )
-            : Icon(
-                isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: ColorConstants.buttonColor,
-                size: 28,
-              ),
-      ),
-    );
-  }
+  // Widget _buildFavoriteButton(bool isFavorite) {
+  //   return GestureDetector(
+  //     onTap: () => _handleFavoriteTap(isFavorite),
+  //     child: Container(
+  //       width: 100,
+  //       height: 100,
+  //       alignment: Alignment.center,
+  //       child: _isTogglingFavorite
+  //           ? ColorFiltered(
+  //               colorFilter: const ColorFilter.mode(
+  //                 ColorConstants.buttonColor,
+  //                 BlendMode.srcATop,
+  //               ),
+  //               child: Lottie.asset(
+  //                 'assets/animations/Love Animation with Particle.json',
+  //                 controller: _favoriteController,
+  //                 width: 100,
+  //                 height: 100,
+  //                 fit: BoxFit.contain,
+  //                 repeat: false,
+  //               ),
+  //             )
+  //           : Icon(
+  //               isFavorite ? Icons.favorite : Icons.favorite_border,
+  //               color: ColorConstants.buttonColor,
+  //               size: 28,
+  //             ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildImageSection(
     BuildContext context,

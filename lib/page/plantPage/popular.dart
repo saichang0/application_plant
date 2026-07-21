@@ -359,11 +359,11 @@ class _PopularPageState extends ConsumerState<PopularPage>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.favorite_border,
-                      size: 80,
-                      color: isDark ? Colors.white : Colors.grey[400],
-                    ),
+                    // Icon(
+                    //   Icons.favorite_border,
+                    //   size: 80,
+                    //   color: isDark ? Colors.white : Colors.grey[400],
+                    // ),
                     const SizedBox(height: 16),
                     Text(
                       'popular_empty'.tr(language),

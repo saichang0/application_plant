@@ -129,8 +129,7 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
     BuildContext context,
     String productId,
   ) async {
-    final wasFavorite =
-        ref.read(favoriteProductsProvider).contains(productId);
+    final wasFavorite = ref.read(favoriteProductsProvider).contains(productId);
     final optimistic = !wasFavorite;
 
     // Optimistic update across all pages.
@@ -306,8 +305,8 @@ class _PlantStoreHomePageState extends ConsumerState<PlantStoreHomePage> {
     final userName = user != null
         ? "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}".trim()
         : 'guest'.tr(language);
-    final userAvatar = (user?['profileImageUrl'] ?? user?['profileImage'])
-        as String?;
+    final userAvatar =
+        (user?['profileImageUrl'] ?? user?['profileImage']) as String?;
 
     return SliverAppBar(
       expandedHeight: 140.0,

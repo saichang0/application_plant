@@ -168,17 +168,17 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
           ],
         ),
         automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.search_rounded,
-              color: isDark ? Colors.white : Colors.black,
-            ),
-            onPressed: () {
-              // Implement search functionality
-            },
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(
+        //       Icons.search_rounded,
+        //       color: isDark ? Colors.white : Colors.black,
+        //     ),
+        //     onPressed: () {
+        //       // Implement search functionality
+        //     },
+        //   ),
+        // ],
         bottom: TabBar(
           controller: _tabController,
           overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
@@ -451,51 +451,51 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
             ),
           ),
           const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '\$${order.totalPrice.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: ColorConstants.secondaryColor,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () {
-                  if (isActive) {
-                    _trackOrder(order, isDark);
-                  } else {
-                    _leaveReview(order, isDark, language);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorConstants.buttonColor,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: Text(
-                  isActive
-                      ? 'track_order'.tr(language)
-                      : 'leave_a_review'.tr(language),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          // Column(
+          //   crossAxisAlignment: CrossAxisAlignment.end,
+          //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          //   children: [
+          //     Text(
+          //       '\$${order.totalPrice.toStringAsFixed(0)}',
+          //       style: const TextStyle(
+          //         fontSize: 16,
+          //         fontWeight: FontWeight.bold,
+          //         color: ColorConstants.secondaryColor,
+          //       ),
+          //     ),
+          //     const SizedBox(height: 12),
+          //     ElevatedButton(
+          //       onPressed: () {
+          //         if (isActive) {
+          //           _trackOrder(order, isDark);
+          //         } else {
+          //           _leaveReview(order, isDark, language);
+          //         }
+          //       },
+          //       style: ElevatedButton.styleFrom(
+          //         backgroundColor: ColorConstants.buttonColor,
+          //         foregroundColor: Colors.white,
+          //         elevation: 0,
+          //         padding: const EdgeInsets.symmetric(
+          //           horizontal: 16,
+          //           vertical: 8,
+          //         ),
+          //         shape: RoundedRectangleBorder(
+          //           borderRadius: BorderRadius.circular(20),
+          //         ),
+          //       ),
+          //       child: Text(
+          //         isActive
+          //             ? 'track_order'.tr(language)
+          //             : 'leave_a_review'.tr(language),
+          //         style: const TextStyle(
+          //           fontSize: 12,
+          //           fontWeight: FontWeight.w600,
+          //         ),
+          //       ),
+          //     ),
+          //   ],
+          // ),
         ],
       ),
     );
